@@ -1,4 +1,4 @@
-from beam_calculator_class import Beam
+from beam import Beam
 import pandas as pd
 
 
@@ -44,30 +44,30 @@ def create_instance(
 
 def process_dataframes(flexural_df, shear_df, span_df):
     # Remove the first two rows of both dataframes.
-    initial_flexural_df = flexural_df.drop([0, 1])
-    initial_shear_df = shear_df.drop([0, 1])
-    initial_span_df = span_df.drop([0, 1])
+    flexural_df = flexural_df.drop([0, 1])
+    shear_df = shear_df.drop([0, 1])
+    span_df = span_df.drop([0, 1])
 
     # Reset indices in place for easier manipulation.
-    initial_flexural_df = initial_flexural_df.reset_index(drop=True)
-    initial_shear_df = initial_shear_df.reset_index(drop=True)
-    initial_span_df = initial_span_df.reset_index(drop=True)
+    flexural_df = flexural_df.reset_index(drop=True)
+    shear_df = shear_df.reset_index(drop=True)
+    span_df = span_df.reset_index(drop=True)
 
     # Slice through the flexural df and get the story identifier.
-    stories = initial_flexural_df[
-        "TABLE:  Concrete Beam Flexure Envelope - ACI 318-19"
-    ].iloc[::3]
+    stories = flexural_df["TABLE:  Concrete Beam Flexure Envelope - ACI 318-19"].iloc[
+        ::3
+    ]
 
     # Slice through the flexural df and get the etabs id.
-    e_ids = initial_flexural_df["Unnamed: 1"].iloc[::3]
+    e_ids = flexural_df["Unnamed: 1"].iloc[::3]
 
     # Slice through the flexural df and get the cleaned width and depth.
     dimension_error_check = False
     try:
-        beam_widths = initial_flexural_df["Unnamed: 3"].iloc[::3].apply(Beam.get_width)
-        beam_depths = initial_flexural_df["Unnamed: 3"].iloc[::3].apply(Beam.get_depth)
+        beam_widths = flexural_df["Unnamed: 3"].iloc[::3].apply(Beam.get_width)
+        beam_depths = flexural_df["Unnamed: 3"].iloc[::3].apply(Beam.get_depth)
         concrete_grade = (
-            initial_flexural_df["Unnamed: 3"].iloc[::3].apply(Beam.get_comp_conc_grade)
+            flexural_df["Unnamed: 3"].iloc[::3].apply(Beam.get_comp_conc_grade)
         )
     except ValueError:
         # True means there is an error, false means no error.
@@ -75,15 +75,15 @@ def process_dataframes(flexural_df, shear_df, span_df):
 
     if dimension_error_check is False:
         # Take each beam's span and convert it from m to mm.
-        spans = initial_span_df["Unnamed: 5"] * 1000
+        spans = span_df["Unnamed: 5"] * 1000
         # Take each beam's positive flexural combo and put it in a list within a list.
-        positive_combo_list = initial_flexural_df["Unnamed: 8"].tolist()
+        positive_combo_list = flexural_df["Unnamed: 8"].tolist()
         nested_pos_combo_list = [
             positive_combo_list[i : i + 3]
             for i in range(0, len(positive_combo_list), 3)
         ]
         # Repeat same process as positive flexural combo for negative flexural combo.
-        negative_combo_list = initial_flexural_df["Unnamed: 5"].tolist()
+        negative_combo_list = flexural_df["Unnamed: 5"].tolist()
         nested_neg_combo_list = [
             negative_combo_list[i : i + 3]
             for i in range(0, len(negative_combo_list), 3)
@@ -115,7 +115,7 @@ def process_dataframes(flexural_df, shear_df, span_df):
 
         # Take the required top flexural reinforcement and put it in a nested list.
         # Index 0 is left, Index 1 is middle, and Index 2 is right.
-        top_flex_reinf_needed = initial_flexural_df["Unnamed: 7"].tolist()
+        top_flex_reinf_needed = flexural_df["Unnamed: 7"].tolist()
         top_flex_reinf_needed = [
             top_flex_reinf_needed[i : i + 3]
             for i in range(0, len(top_flex_reinf_needed), 3)
@@ -130,7 +130,7 @@ def process_dataframes(flexural_df, shear_df, span_df):
         ]
 
         # Repeat the same as above but for required bottom flexural reinforcement.
-        bot_flex_reinf_needed = initial_flexural_df["Unnamed: 10"].tolist()
+        bot_flex_reinf_needed = flexural_df["Unnamed: 10"].tolist()
         bot_flex_reinf_needed = [
             bot_flex_reinf_needed[i : i + 3]
             for i in range(0, len(bot_flex_reinf_needed), 3)
@@ -145,7 +145,7 @@ def process_dataframes(flexural_df, shear_df, span_df):
 
         # Take the required flexural torsion reinforcement and put it in a nested list.
         # Index 0 is left, Index 1 is middle, and Index 2 is right.
-        flex_torsion_reinf_needed = initial_shear_df["Unnamed: 14"].tolist()
+        flex_torsion_reinf_needed = shear_df["Unnamed: 14"].tolist()
         flex_torsion_reinf_needed = [
             flex_torsion_reinf_needed[i : i + 3]
             for i in range(0, len(flex_torsion_reinf_needed), 3)
@@ -161,13 +161,13 @@ def process_dataframes(flexural_df, shear_df, span_df):
         ]
 
         # Take each beams shear force (kN) and put it in a nested list.
-        shear_force_list = initial_shear_df["Unnamed: 6"].tolist()
+        shear_force_list = shear_df["Unnamed: 6"].tolist()
         nested_shear_force = [
             shear_force_list[i : i + 3] for i in range(0, len(shear_force_list), 3)
         ]
 
         # Take each beam's shear combo and put it in a nested list.
-        shear_combo_list = initial_shear_df["Unnamed: 5"].tolist()
+        shear_combo_list = shear_df["Unnamed: 5"].tolist()
         nested_shear_combo = [
             shear_combo_list[i : i + 3] for i in range(0, len(shear_combo_list), 3)
         ]
@@ -186,7 +186,7 @@ def process_dataframes(flexural_df, shear_df, span_df):
         shear_combo_check = Beam.check_combo(nested_shear_combo)
 
         # Repeat the same as shear combo, except for torsion combo.
-        torsion_combo_list = initial_shear_df["Unnamed: 9"].tolist()
+        torsion_combo_list = shear_df["Unnamed: 9"].tolist()
         nested_torsion_combo = [
             torsion_combo_list[i : i + 3] for i in range(0, len(torsion_combo_list), 3)
         ]
@@ -204,7 +204,7 @@ def process_dataframes(flexural_df, shear_df, span_df):
 
         # Take the required shear reinforcement and put it in a nested list.
         # Index 0 is left, Index 1 is middle, and Index 2 is right.
-        shear_reinf_needed = initial_shear_df["Unnamed: 8"].tolist()
+        shear_reinf_needed = shear_df["Unnamed: 8"].tolist()
         shear_reinf_needed = [
             shear_reinf_needed[i : i + 3] for i in range(0, len(shear_reinf_needed), 3)
         ]
@@ -219,7 +219,7 @@ def process_dataframes(flexural_df, shear_df, span_df):
         ]
 
         # Repeat the same as required shear reinforcement but for required torsion reinforcement.
-        torsion_reinf_needed = initial_shear_df["Unnamed: 11"].tolist()
+        torsion_reinf_needed = shear_df["Unnamed: 11"].tolist()
         torsion_reinf_needed = [
             torsion_reinf_needed[i : i + 3]
             for i in range(0, len(torsion_reinf_needed), 3)

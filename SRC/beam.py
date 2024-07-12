@@ -1,10 +1,98 @@
 import numpy as np
+from dataclasses import dataclass, field
+from typing import List
+
+
+@dataclass
+class Beam:
+    storey: str = "No storey provided."
+    etabs_id: str = "No ETABS ID."
+    width: int = 0  # in mm
+    depth: int = 0  # in mm
+    span: int = 0  # in mm
+    comp_conc_grade: int = 0  # in MPa (n/mm^2)
+    # Index 0 of this list is positive flexure, index 1 is negative flexure.
+    flex_overstressed: List[bool] = field(default_factory=lambda: [False, False])
+    # Index 0 of this list is shear, index 1 is torsion.
+    shear_overstressed: List[bool] = field(default_factory=lambda: [False, False])
+    req_top_flex_reinf: int = 0  # in mm^2
+    req_bot_flex_reinf: int = 0  # in mm^2
+    req_torsion_flex_reinf: int = 0  # in mm^2
+    shear_force: int = 0  # in kN
+    req_shear_reinf: int = 0  # in mm^2
+    req_torsion_reinf: int = 0  # in mm^2
+
+    @staticmethod
+    def get_width(width: str) -> int:
+        """This function cleans and retrieves the width of the beam.
+        Args:
+            width (str): Width in column of dataframe.
+        Returns:
+            int: Width of beam.
+        """
+        width_list = list(width)
+        width_list = [el.lower() for el in width_list]
+        excluded_values = ["p", "t", "b", "-", "_", "c", "/", "s", "w"]
+        cleaned_width_list = [ex for ex in width_list if ex not in excluded_values]
+        index_list = cleaned_width_list.index("x")
+        width_list = cleaned_width_list[:index_list]
+        true_width = "".join(width_list)
+        return int(true_width)
+
+    @staticmethod
+    def get_depth(depth: str) -> int:
+        """This function cleans and retrieves the depth of the beam.
+
+        Args:
+            depth (str): Depth in column of dataframe.
+
+        Returns:
+            int: Depth of beam.
+        """
+        depth_list = list(depth)
+        depth_list = [el.lower() for el in depth_list]
+        excluded_values = ["p", "t", "b", "-", "_", "c", "/", "s", "w"]
+        cleaned_depth_list = [ex for ex in depth_list if ex not in excluded_values]
+        index_list = cleaned_depth_list.index("x")
+        depth_list = cleaned_depth_list[1 + index_list : -4]
+        true_depth = "".join(depth_list)
+        return int(true_depth)
+
+    @staticmethod
+    def get_comp_conc_grade(comp_conc_grade: str) -> int:
+        """This function cleans and retrieves the cylinderical concrete compressive strength, fc'.
+
+        Args:
+            comp_conc_grade (str): the section string to clean and get the compressive strength of the beam from.
+
+        Returns:
+            int: the cylincderial concrete compressive strength, fc'.
+        """
+        section_list = list(comp_conc_grade)
+        section_list = [el.lower() for el in section_list]
+        excluded_values = ["p", "t", "b", "-", "_", "x", "s", "w"]
+        excluded_section_list = [ex for ex in section_list if ex not in excluded_values]
+        index_c = excluded_section_list.index("c")
+        index_slash = excluded_section_list.index("/")
+        retrieved_value = excluded_section_list[1 + index_c : index_slash]
+        conc_grade = "".join(retrieved_value)
+        return int(conc_grade)
+
+    @staticmethod
+    def check_combo(combo_list: list) -> str:
+        """This function checks if any of the flexural combos in the list is overstressed.
+
+        Args:
+            combo_list (list of string): Checks each flexural combo in the list.
+
+        Returns:
+            list of string: Returns "True" for each overstressed combo and "False" for each not overstressed.
+        """
+        return ["True" if combo == "O/S" else "False" for combo in combo_list]
 
 
 class Beam:
-    """This class aims to obtain the necessary information to calculate the beam
-    reinforcement schedule.
-    """
+    """This class encapsulates the necessary attributes to return a solved beam reinforcement object."""
 
     def __init__(
         self,
@@ -1089,67 +1177,3 @@ class Beam:
             self.transverse_space_check = "No"
         else:
             self.transverse_space_check = "Yes"
-
-    # def process_bot_flexural_rebar_string(self):
-    #     dia_list = [16, 20, 25, 32]
-    #     target = self.req_top_flex_reinf.copy()
-    #     current_bot_string = [
-    #         self.flex_bot_left_rebar_string,
-    #         self.flex_bot_middle_rebar_string,
-    #         self.flex_bot_right_rebar_string,
-    #     ]
-    #     if self.neg_flex_combo == "False" and self.pos_flex_combo == "False":
-    #         bot_first_layer_dia = {
-    #             self.flex_bot_left_dia,
-    #             self.flex_bot_middle_dia,
-    #             self.flex_bot_right_dia,
-    #         }
-    #         bot_first_layer_dia_loop = list(bot_first_layer_dia)
-    #         if len(bot_first_layer_dia) == 2:
-    #             for index, req in enumerate(target):
-    #                 found = False
-    #                 if index == bot_first_layer_dia_loop.index(
-    #                     min(bot_first_layer_dia_loop)
-    #                 ):
-    #                     target[index] = current_bot_string[index]
-    #                     found = True
-    #                     break
-    #                 else:
-    #                     for dia in dia_list:
-    #                         if (
-    #                             Beam.provided_reinforcement(
-    #                                 min(bot_first_layer_dia_loop)
-    #                             )
-    #                             * self.flex_rebar_count
-    #                         ) + (
-    #                             Beam.provided_reinforcement(dia) * self.flex_rebar_count
-    #                         ) > req:  # type: ignore
-    #                             target[index] = (
-    #                                 f"{self.flex_rebar_count}T{min(bot_first_layer_dia_loop)} + {self.flex_rebar_count}T{dia}"
-    #                             )
-    #                             found = True
-    #                             if index == 0:
-    #                                 self.flex_bot_left_dia = min(
-    #                                     bot_first_layer_dia_loop
-    #                                 )
-    #                                 self.flex_bot_left_dia_two = dia
-    #                                 self.flex_bot_left_rebar_string = target[index]
-    #                             elif index == 1:
-    #                                 self.flex_bot_middle_dia = min(
-    #                                     bot_first_layer_dia_loop
-    #                                 )
-    #                                 self.flex_bot_middle_dia_two = dia
-    #                                 self.flex_bot_middle_rebar_string = target[index]
-    #                             elif index == 2:
-    #                                 self.flex_bot_right_dia = min(
-    #                                     bot_first_layer_dia_loop
-    #                                 )
-    #                                 self.flex_bot_right_dia_two = dia
-    #                                 self.flex_bot_right_rebar_string = target[index]
-    #                             break
-    #                         if found:
-    #                             break
-    #             if not found:
-    #                 target[index] = "Increase rebar count or re-assess"
-    #     else:
-    #         target = ["Overstressed. Please re-assess"] * len(target)
