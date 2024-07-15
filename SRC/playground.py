@@ -44,7 +44,7 @@ def create_instance(
     return beam
 
 
-flexural_df = pd.read_excel(excel_file, sheet_name=1, header=1)
+flexural_df = pd.read_excel(excel_file, sheet_name=0, header=1)
 shear_df = pd.read_excel(excel_file, sheet_name=1, header=1)
 span_df = pd.read_excel(excel_file, sheet_name=2, header=1)
 
@@ -76,74 +76,73 @@ if dimension_error_check is False:
     spans = span_df["Length"].tolist()
     spans = [round(span * 1000) for span in spans]
 
-    # Take each beam's positive flexural combo and put it in a list within a list.
-    positive_combo_list = flexural_df["Unnamed: 8"].tolist()
+    # Take each beam's flexural combo and put it in a list within a list.
+    pos_combo_list = flexural_df["+ve Moment Combo"].tolist()
     nested_pos_combo_list = [
-        positive_combo_list[i : i + 3] for i in range(0, len(positive_combo_list), 3)
+        pos_combo_list[i : i + 3] for i in range(0, len(pos_combo_list), 3)
     ]
-    # Repeat same process as positive flexural combo for negative flexural combo.
-    negative_combo_list = flexural_df["Unnamed: 5"].tolist()
+    neg_combo_list = flexural_df["-ve Moment Combo"].tolist()
     nested_neg_combo_list = [
-        negative_combo_list[i : i + 3] for i in range(0, len(negative_combo_list), 3)
+        neg_combo_list[i : i + 3] for i in range(0, len(neg_combo_list), 3)
     ]
 
-    # # Take the nested list and return OK or O/S as a string in a list.
-    # nested_pos_combo_list = [
-    #     "O/S"
-    #     if any(str(element).strip().lower() in ["o/s", "nan"] for element in sublist)
-    #     else "OK"
-    #     for sublist in nested_pos_combo_list
-    # ]
-    # nested_neg_combo_list = [
-    #     "O/S"
-    #     if any(str(element).strip().lower() in ["o/s", "nan"] for element in sublist)
-    #     else "OK"
-    #     for sublist in nested_neg_combo_list
-    # ]
+    # Take the nested lists and return True if any of the combos are overstressed.
+    checked_pos_combo_list = [
+        True
+        if any(str(element).strip().lower() in ["o/s", "nan"] for element in sublist)
+        else False
+        for sublist in nested_pos_combo_list
+    ]
+    checked_neg_combo_list = [
+        True
+        if any(str(element).strip().lower() in ["o/s", "nan"] for element in sublist)
+        else False
+        for sublist in nested_neg_combo_list
+    ]
+    # Zip the positive and negative combos together. Index 0 is positive, Index 1 is negative.
+    flexural_combo = [
+        [pos, neg] for pos, neg in zip(checked_pos_combo_list, checked_neg_combo_list)
+    ]
 
-#     # Slice through the flexural df and retrieve whether is it overstressed in positive combo.
-#     positive_flex_combo = Beam.check_combo(nested_pos_combo_list)
+    # Take the required top flexural reinforcement and put it in a nested list.
+    # Index 0 is left, Index 1 is middle, and Index 2 is right.
+    top_flex_reinf_needed = flexural_df["As Top"].tolist()
+    top_flex_reinf_needed = [
+        top_flex_reinf_needed[i : i + 3]
+        for i in range(0, len(top_flex_reinf_needed), 3)
+    ]
 
-#     # Slice through the flexural df and retrieve whether it is overstressed in negative combo.
-#     negative_flex_combo = Beam.check_combo(nested_neg_combo_list)
+    # Check if any of the beams are overstressed. If they are, the values get replaced with O/S.
+    top_flex_reinf_needed = [
+        [
+            "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
+            for element in sublist
+        ]
+        for sublist in top_flex_reinf_needed
+    ]
 
-#     # Take the required top flexural reinforcement and put it in a nested list.
-#     # Index 0 is left, Index 1 is middle, and Index 2 is right.
-#     top_flex_reinf_needed = flexural_df["Unnamed: 7"].tolist()
-#     top_flex_reinf_needed = [
-#         top_flex_reinf_needed[i : i + 3]
-#         for i in range(0, len(top_flex_reinf_needed), 3)
-#     ]
-#     # Check if any of the beams are overstressed. If they are, the values get replaced with O/S.
-#     top_flex_reinf_needed = [
-#         [
-#             "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
-#             for element in sublist
-#         ]
-#         for sublist in top_flex_reinf_needed
-#     ]
+    # Repeat the same as above but for required bottom flexural reinforcement.
+    bot_flex_reinf_needed = flexural_df["As Bot"].tolist()
+    bot_flex_reinf_needed = [
+        bot_flex_reinf_needed[i : i + 3]
+        for i in range(0, len(bot_flex_reinf_needed), 3)
+    ]
+    bot_flex_reinf_needed = [
+        [
+            "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
+            for element in sublist
+        ]
+        for sublist in bot_flex_reinf_needed
+    ]
 
-#     # Repeat the same as above but for required bottom flexural reinforcement.
-#     bot_flex_reinf_needed = flexural_df["Unnamed: 10"].tolist()
-#     bot_flex_reinf_needed = [
-#         bot_flex_reinf_needed[i : i + 3]
-#         for i in range(0, len(bot_flex_reinf_needed), 3)
-#     ]
-#     bot_flex_reinf_needed = [
-#         [
-#             "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
-#             for element in sublist
-#         ]
-#         for sublist in bot_flex_reinf_needed
-#     ]
-
-#     # Take the required flexural torsion reinforcement and put it in a nested list.
-#     # Index 0 is left, Index 1 is middle, and Index 2 is right.
-#     flex_torsion_reinf_needed = shear_df["Unnamed: 14"].tolist()
-#     flex_torsion_reinf_needed = [
-#         flex_torsion_reinf_needed[i : i + 3]
-#         for i in range(0, len(flex_torsion_reinf_needed), 3)
-#     ]
+    # Take the required flexural torsion reinforcement and put it in a nested list.
+    # Index 0 is left, Index 1 is middle, and Index 2 is right.
+    flex_torsion_reinf_needed = shear_df["Unnamed: 14"].tolist()
+    flex_torsion_reinf_needed = [
+        flex_torsion_reinf_needed[i : i + 3]
+        for i in range(0, len(flex_torsion_reinf_needed), 3)
+    ]
+    print()
 
 #     # Check if any of the beams are overstressed in torsion. If they are, values get replaced with O/S.
 #     flex_torsion_reinf_needed = [
