@@ -1,5 +1,6 @@
 import pandas as pd
 from beam import Beam
+from flexure import Flexure
 
 excel_file = r"assets\test run.xlsx"
 
@@ -213,3 +214,52 @@ if dimension_error_check is False:
             torsion_reinf_needed,
         )
     ]
+    # Begin with for loop and create attributes for each beam instance to undertake calculations.
+    for beam in beam_instances:
+        # First undertake flexural design:
+        flexural_reinf = Flexure(beam)
+
+        # Get the longitudinal rebar count.
+        flexural_reinf.get_long_count()
+
+        # Split the torsion reinforcement to the top and bottom rebar if the depth <= 700mm.
+        flexural_reinf.flex_torsion_splitting()
+
+        # # Begin calculating the required top and bottom longitudinal reinforcement.
+        # beam.get_top_flex_rebar_string()
+        # beam.get_top_flex_rebar_area()
+
+        # beam.get_bot_flex_rebar_string()
+        # beam.get_bot_flex_rebar_area()
+
+        # # beam.process_bot_flexural_rebar_string()
+
+        # # Calculate the residual rebar obtained from the provided against the required.
+        # beam.get_residual_rebar()
+
+        # # Calculate the required shear legs based on the beams width.
+        # beam.get_shear_legs()
+
+        # # Assess if the transverse shear spacing needs to be checked.
+        # beam.check_transverse_shear_spacing()
+
+        # # Calculate the total required shear reinforcement including shear and torsion.
+        # beam.get_total_shear_req()
+
+        # # Calculate the provided shear reinforcement string and area.
+        # beam.get_min_shear_long_spacing()
+        # beam.get_shear_string()
+        # beam.get_shear_area()
+
+        # # Check and replace if necessary the maximum longitudinal shear spacing against Clause 18.4.2.4 of ACI 318-19.
+        # beam.modify_shear_reinf()
+
+        # # Calculate the allowable side face clear space in beams which have a depth greater than 600mm.
+        # beam.get_side_face_clear_space()
+
+        # # Calculate the provided side face reinforcement string and area.
+        # beam.get_side_face_string()
+        # beam.get_side_face_area()
+
+        # # Grab the index of the side face reinforcement with the highest area.
+        # beam.get_index_for_side_face_reinf()

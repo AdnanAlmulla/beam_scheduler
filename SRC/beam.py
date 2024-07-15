@@ -5,6 +5,8 @@ from typing import List
 
 @dataclass
 class Beam:
+    """This class encapsulates the necessary attributes to return a solved beam reinforcement object."""
+
     storey: str = "No storey provided."
     etabs_id: str = "No ETABS ID."
     width: int = 0  # in mm
@@ -23,6 +25,10 @@ class Beam:
     shear_overstressed: List[bool] = field(default_factory=lambda: [False, False])
     req_shear_reinf: List[int] = field(default_factory=lambda: [0, 0, 0])  # in mm^2
     req_torsion_reinf: List[int] = field(default_factory=lambda: [0, 0, 0])  # in mm^2
+    eff_depth: int = field(init=False)  # in mm
+
+    def __post_init__(self):
+        self.eff_depth = 0.8 * self.depth
 
     @staticmethod
     def get_width(width: str) -> int:
@@ -79,6 +85,18 @@ class Beam:
         retrieved_value = excluded_section_list[1 + index_c : index_slash]
         conc_grade = "".join(retrieved_value)
         return int(conc_grade)
+
+    @staticmethod
+    def provided_reinforcement(diameter: int) -> float:
+        """This is the main function to provide reinforcement and is utilised for clarity purposes.
+
+        Args:
+            diameter (int): The selected diameter to provide.
+
+        Returns:
+            float: An integer representing the provided reinforcement area in mm^2.
+        """
+        return np.pi * (diameter / 2) ** 2
 
 
 # class Beam:
@@ -186,138 +204,6 @@ class Beam:
 #         self.req_bot_right_flex_reinf = 0
 #         self.transverse_space_check = None
 #         self.final_shear_legs = 0
-
-#     @staticmethod
-#     def get_width(width: str) -> int:
-#         """This function cleans and retrieves the relevant width of the beam.
-
-#         Args:
-#             width (int): Width in column of dataframe to clean and get width of beam.
-#         """
-#         width_list = list(width)
-#         width_list = [el.lower() for el in width_list]
-#         excluded_values = ["p", "t", "b", "-", "_", "c", "/", "s", "w"]
-#         v1_width_list = [ex for ex in width_list if ex not in excluded_values]
-#         index_list = v1_width_list.index("x")
-#         v2_width_list = v1_width_list[:index_list]
-#         true_width = "".join(v2_width_list)
-#         return int(true_width)
-
-#     @staticmethod
-#     def get_depth(depth: str) -> int:
-#         """This function cleans and retrives the relevant depth of the beam.
-
-#         Args:
-#             depth (int): the Integer depth in column of dataframe to clean and get depth of beam.
-#         """
-#         depth_list = list(depth)
-#         depth_list = [el.lower() for el in depth_list]
-#         excluded_values = ["p", "t", "b", "-", "_", "c", "/", "s", "w"]
-#         v1_depth_list = [ex for ex in depth_list if ex not in excluded_values]
-#         index_list = v1_depth_list.index("x")
-#         v2_depth_list = v1_depth_list[1 + index_list : -4]
-#         true_depth = "".join(v2_depth_list)
-#         return int(true_depth)
-
-#     @staticmethod
-#     def get_comp_conc_grade(comp_conc_grade: str) -> int:
-#         """This function cleans and retrieves the cylinderical concrete compressive strength, fc'.
-
-#         Args:
-#             comp_conc_grade (str): the section string to clean and get the compressive strength of the beam from.
-
-#         Returns:
-#             int: the cylincderial concrete compressive strength, fc'.
-#         """
-#         section_list = list(comp_conc_grade)
-#         section_list = [el.lower() for el in section_list]
-#         excluded_values = ["p", "t", "b", "-", "_", "x", "s", "w"]
-#         excluded_section_list = [ex for ex in section_list if ex not in excluded_values]
-#         index_c = excluded_section_list.index("c")
-#         index_slash = excluded_section_list.index("/")
-#         retrieved_value = excluded_section_list[1 + index_c : index_slash]
-#         conc_grade = "".join(retrieved_value)
-#         return int(conc_grade)
-
-#     @staticmethod
-#     def check_combo(combo_list: list) -> str:
-#         """This function checks if any of the flexural combos in the list is overstressed.
-
-#         Args:
-#             combo_list (list of string): Checks each flexural combo in the list.
-
-#         Returns:
-#             list of string: Returns "True" for each overstressed combo and "False" for each not overstressed.
-#         """
-#         return ["True" if combo == "O/S" else "False" for combo in combo_list]
-
-#     @staticmethod
-#     def provided_reinforcement(diameter: int) -> float:
-#         """This is the main function to provide reinforcement and is utilised for clarity purposes.
-
-#         Args:
-#             diameter (int): The selected diameter to provide.
-
-#         Returns:
-#             float: An integer representing the provided reinforcement area in mm^2.
-#         """
-#         return np.pi * (diameter / 2) ** 2
-
-#     def get_eff_depth(self):
-#         """This method takes the acquired depth of the instanced beam and returns 0.8 of that depth to acquire a conservative
-#         effective depth value.
-#         """
-#         self.eff_depth = 0.8 * self.depth
-
-#     def get_long_count(self):
-#         """This method takes a defined instance and calculates the required longitudinal rebar count based on its width.
-
-#         Returns:
-#             int: The integer count is attributed to the instance. If it's greater than 2, it's subtracted by one. Else, it's 2.
-#         """
-#         self.flex_rebar_count = self.width // 100
-#         if self.flex_rebar_count > 2:
-#             self.flex_rebar_count -= 1
-#         else:
-#             self.flex_rebar_count = 2
-#         return self.flex_rebar_count
-
-#     def flex_torsion_splitting(self):
-#         """This method assess the depth of the beam. If the depth is > 700mm, it exits the method.
-#         If it's <=700mm, it takes the torsion flexural requirement list, splits each index into two,
-#         and then distributes it amongst the top and bottom longitudinal reinforcement. It modifies
-#         the attributes in place and changes the flex_torsion reinforcement to a list of 0's.
-#         """
-#         if self.pos_flex_combo == "False" or self.neg_flex_combo == "False":
-#             if self.depth <= 700:
-#                 divided_torsion_list = [i / 2 for i in self.req_flex_torsion_reinf]
-#                 self.req_top_flex_reinf = [
-#                     a + b for a, b in zip(divided_torsion_list, self.req_top_flex_reinf)
-#                 ]
-#                 self.req_bot_flex_reinf = [
-#                     a + b for a, b in zip(divided_torsion_list, self.req_bot_flex_reinf)
-#                 ]
-#                 self.req_flex_torsion_reinf = [0, 0, 0]
-
-#         (
-#             self.req_bot_left_flex_reinf,
-#             self.req_bot_middle_flex_reinf,
-#             self.req_bot_right_flex_reinf,
-#         ) = (
-#             self.req_bot_flex_reinf[0],
-#             self.req_bot_flex_reinf[1],
-#             self.req_bot_flex_reinf[2],
-#         )
-
-#         (
-#             self.req_top_left_flex_reinf,
-#             self.req_top_middle_flex_reinf,
-#             self.req_top_right_flex_reinf,
-#         ) = (
-#             self.req_top_flex_reinf[0],
-#             self.req_top_flex_reinf[1],
-#             self.req_top_flex_reinf[2],
-#         )
 
 #     def get_top_flex_rebar_string(self):
 #         """This method loops through the required top flexural reinforcement and provides a string
