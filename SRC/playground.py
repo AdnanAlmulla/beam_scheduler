@@ -3,47 +3,6 @@ from beam import Beam
 
 excel_file = r"assets\test run.xlsx"
 
-
-# Create all instances of Beam class.
-def create_instance(
-    storey,
-    etabs_id,
-    width,
-    depth,
-    span,
-    comp_conc_grade,
-    pos_flex_combo,
-    neg_flex_combo,
-    req_top_flex_reinf,
-    req_bot_flex_reinf,
-    req_flex_torsion_reinf,
-    shear_force,
-    shear_combo,
-    torsion_combo,
-    req_shear_reinf,
-    req_torsion_reinf,
-):
-    beam = Beam(
-        storey,
-        etabs_id,
-        width,
-        depth,
-        span,
-        comp_conc_grade,
-        pos_flex_combo,
-        neg_flex_combo,
-        req_top_flex_reinf,
-        req_bot_flex_reinf,
-        req_flex_torsion_reinf,
-        shear_force,
-        shear_combo,
-        torsion_combo,
-        req_shear_reinf,
-        req_torsion_reinf,
-    )
-    return beam
-
-
 flexural_df = pd.read_excel(excel_file, sheet_name=0, header=1)
 shear_df = pd.read_excel(excel_file, sheet_name=1, header=1)
 span_df = pd.read_excel(excel_file, sheet_name=2, header=1)
@@ -137,125 +96,120 @@ if dimension_error_check is False:
 
     # Take the required flexural torsion reinforcement and put it in a nested list.
     # Index 0 is left, Index 1 is middle, and Index 2 is right.
-    flex_torsion_reinf_needed = shear_df["Unnamed: 14"].tolist()
+    flex_torsion_reinf_needed = shear_df["TLngRebar (Al)"].tolist()
     flex_torsion_reinf_needed = [
         flex_torsion_reinf_needed[i : i + 3]
         for i in range(0, len(flex_torsion_reinf_needed), 3)
     ]
-    print()
 
-#     # Check if any of the beams are overstressed in torsion. If they are, values get replaced with O/S.
-#     flex_torsion_reinf_needed = [
-#         [
-#             "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
-#             for element in sublist
-#         ]
-#         for sublist in flex_torsion_reinf_needed
-#     ]
+    # Check if any of the beams are overstressed in torsion. If they are, values get replaced with O/S.
+    flex_torsion_reinf_needed = [
+        [
+            "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
+            for element in sublist
+        ]
+        for sublist in flex_torsion_reinf_needed
+    ]
 
-#     # Take each beams shear force (kN) and put it in a nested list.
-#     shear_force_list = shear_df["Unnamed: 6"].tolist()
-#     nested_shear_force = [
-#         shear_force_list[i : i + 3] for i in range(0, len(shear_force_list), 3)
-#     ]
+    # Take each beams shear force (kN) and put it in a nested list.
+    shear_force_list = shear_df["Shear Force"].tolist()
+    nested_shear_force = [
+        shear_force_list[i : i + 3] for i in range(0, len(shear_force_list), 3)
+    ]
 
-#     # Take each beam's shear combo and put it in a nested list.
-#     shear_combo_list = shear_df["Unnamed: 5"].tolist()
-#     nested_shear_combo = [
-#         shear_combo_list[i : i + 3] for i in range(0, len(shear_combo_list), 3)
-#     ]
+    # Take each beam's shear combo and put it in a nested list.
+    shear_combo_list = shear_df["Shear Design Combo"].tolist()
+    nested_shear_combo = [
+        shear_combo_list[i : i + 3] for i in range(0, len(shear_combo_list), 3)
+    ]
 
-#     # Take the nested list and return OK or OS as a string in a list.
-#     nested_shear_combo = [
-#         "O/S"
-#         if any(str(element).strip().lower() in ["o/s", "nan"] for element in sublist)
-#         else "OK"
-#         for sublist in nested_shear_combo
-#     ]
+    # Take the nested list and return OK or OS as a string in a list.
+    checked_shear_combo = [
+        True
+        if any(str(element).strip().lower() in ["o/s", "nan"] for element in sublist)
+        else False
+        for sublist in nested_shear_combo
+    ]
 
-#     # Apply the Beam class method to retrieve whether it is overstressed in shear.
-#     shear_combo_check = Beam.check_combo(nested_shear_combo)
+    # Repeat the same as shear combo, except for torsion combo.
+    torsion_combo_list = shear_df["TTrnCombo"].tolist()
+    nested_torsion_combo = [
+        torsion_combo_list[i : i + 3] for i in range(0, len(torsion_combo_list), 3)
+    ]
 
-#     # Repeat the same as shear combo, except for torsion combo.
-#     torsion_combo_list = shear_df["Unnamed: 9"].tolist()
-#     nested_torsion_combo = [
-#         torsion_combo_list[i : i + 3] for i in range(0, len(torsion_combo_list), 3)
-#     ]
+    checked_torsion_combo = [
+        True
+        if any(str(element).strip().lower() in ["o/s", "nan"] for element in sublist)
+        else False
+        for sublist in nested_torsion_combo
+    ]
 
-#     nested_torsion_combo = [
-#         "O/S"
-#         if any(str(element).strip().lower() in ["o/s", "nan"] for element in sublist)
-#         else "OK"
-#         for sublist in nested_torsion_combo
-#     ]
+    shear_combo = [
+        [shear, torsion]
+        for shear, torsion in zip(checked_shear_combo, checked_torsion_combo)
+    ]
 
-#     torsion_combo_check = Beam.check_combo(nested_torsion_combo)
+    # Take the required shear reinforcement and put it in a nested list.
+    # Index 0 is left, Index 1 is middle, and Index 2 is right.
+    shear_reinf_needed = shear_df["VRebar (Av/s)"].tolist()
+    shear_reinf_needed = [
+        shear_reinf_needed[i : i + 3] for i in range(0, len(shear_reinf_needed), 3)
+    ]
 
-#     # Take the required shear reinforcement and put it in a nested list.
-#     # Index 0 is left, Index 1 is middle, and Index 2 is right.
-#     shear_reinf_needed = shear_df["Unnamed: 8"].tolist()
-#     shear_reinf_needed = [
-#         shear_reinf_needed[i : i + 3] for i in range(0, len(shear_reinf_needed), 3)
-#     ]
+    # Check if any of the beams are overstressed in shear. If they are, values get replaced with O/S.
+    shear_reinf_needed = [
+        [
+            "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
+            for element in sublist
+        ]
+        for sublist in shear_reinf_needed
+    ]
 
-#     # Check if any of the beams are overstressed in shear. If they are, values get replaced with O/S.
-#     shear_reinf_needed = [
-#         [
-#             "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
-#             for element in sublist
-#         ]
-#         for sublist in shear_reinf_needed
-#     ]
+    # Repeat the same as required shear reinforcement but for required torsion reinforcement.
+    torsion_reinf_needed = shear_df["TTrnRebar (At/s)"].tolist()
+    torsion_reinf_needed = [
+        torsion_reinf_needed[i : i + 3] for i in range(0, len(torsion_reinf_needed), 3)
+    ]
+    torsion_reinf_needed = [
+        [
+            "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
+            for element in sublist
+        ]
+        for sublist in torsion_reinf_needed
+    ]
 
-#     # Repeat the same as required shear reinforcement but for required torsion reinforcement.
-#     torsion_reinf_needed = shear_df["Unnamed: 11"].tolist()
-#     torsion_reinf_needed = [
-#         torsion_reinf_needed[i : i + 3] for i in range(0, len(torsion_reinf_needed), 3)
-#     ]
-#     torsion_reinf_needed = [
-#         [
-#             "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
-#             for element in sublist
-#         ]
-#         for sublist in torsion_reinf_needed
-#     ]
-
-#     # Call create_instance function and create instances of all beams.
-#     beam_instances = [
-#         create_instance(
-#             stories,
-#             e_id,
-#             width,
-#             depth,
-#             span,
-#             concrete_grade,
-#             pos_flex_combo,
-#             neg_flex_combo,
-#             req_top_flex_reinf,
-#             req_bot_flex_reinf,
-#             req_flex_torsion_reinf,
-#             shear_force,
-#             shear_combo,
-#             torsion_combo,
-#             req_shear_reinf,
-#             req_torsion_reinf,
-#         )
-#         for stories, e_id, width, depth, span, concrete_grade, pos_flex_combo, neg_flex_combo, req_top_flex_reinf, req_bot_flex_reinf, req_flex_torsion_reinf, shear_force, shear_combo, torsion_combo, req_shear_reinf, req_torsion_reinf in zip(
-#             stories,
-#             e_ids,
-#             beam_widths,
-#             beam_depths,
-#             spans,
-#             concrete_grade,
-#             positive_flex_combo,
-#             negative_flex_combo,
-#             top_flex_reinf_needed,
-#             bot_flex_reinf_needed,
-#             flex_torsion_reinf_needed,
-#             nested_shear_force,
-#             shear_combo_check,
-#             torsion_combo_check,
-#             shear_reinf_needed,
-#             torsion_reinf_needed,
-#         )
-#     ]
+    # Create beam_instances list and store all the Beam objects.
+    beam_instances = [
+        Beam(
+            stories,
+            etabs_id,
+            width,
+            depth,
+            span,
+            concrete_grade,
+            flexural_combo,
+            req_top_flex_reinf,
+            req_bot_flex_reinf,
+            req_flex_torsion_reinf,
+            shear_force,
+            shear_overstressed,
+            req_shear_reinf,
+            req_torsion_reinf,
+        )
+        for stories, etabs_id, width, depth, span, concrete_grade, flexural_combo, req_top_flex_reinf, req_bot_flex_reinf, req_flex_torsion_reinf, shear_force, shear_overstressed, req_shear_reinf, req_torsion_reinf in zip(
+            stories,
+            etabs_ids,
+            beam_widths,
+            beam_depths,
+            spans,
+            concrete_grade,
+            flexural_combo,
+            top_flex_reinf_needed,
+            bot_flex_reinf_needed,
+            flex_torsion_reinf_needed,
+            nested_shear_force,
+            shear_combo,
+            shear_reinf_needed,
+            torsion_reinf_needed,
+        )
+    ]
