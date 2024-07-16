@@ -1,4 +1,6 @@
 from beam import Beam
+from dataclasses import field
+from typing import List
 
 
 class Flexure:
@@ -8,6 +10,7 @@ class Flexure:
     def __init__(self, beam: Beam):
         self.beam = beam
         self.flex_rebar_count: int = 0
+        self.flex_rebar_dia: List[int] = field(default_factory=lambda: [16, 20, 25, 32])
 
     def get_long_count(self):
         """This method takes a defined instance and calculates the required longitudinal rebar count based on its width."""
@@ -32,3 +35,61 @@ class Flexure:
                 for a, b in zip(divided_torsion_list, self.beam.req_bot_flex_reinf)
             ]
             self.beam.req_torsion_flex_reinf = [0, 0, 0]
+
+    def get_top_flex_rebar(self):
+        """This method loops through the required top flexural reinforcement and provides a string
+        containing the schedule for each part of the beam. Once the string has been made, the schedule
+        for each section of the beam is indexed to its relevant attribute."""
+        target = self.req_top_flex_reinf.copy()
+        # Index 0 of this list is positive flexure, index 1 is negative flexure.
+        if self.beam.flex_overstressed[1] is not True:
+            for index, req in enumerate(target):
+                found = False
+                for diameter_layer1 in self.flex_rebar_dia:
+                    if (
+                        (Beam.provided_reinforcement(diameter_layer1))
+                        * self.flex_rebar_count  # type: ignore
+                    ) > req:
+                        target[index] = f"{self.flex_rebar_count}T{diameter_layer1}"
+                        found = True
+                        # Assign the computed diameter to the appropriate attributes immediately after determining them
+                        if index == 0:
+                            self.flex_top_left_dia = diameter_layer1
+                        elif index == 1:
+                            self.flex_top_middle_dia = diameter_layer1
+                        elif index == 2:
+                            self.flex_top_right_dia = diameter_layer1
+                        break
+                if not found:
+                    for diameter_layer2 in self.flex_rebar_dia:
+                        for diameter_layer1 in self.flex_rebar_dia:
+                            if (
+                                (Beam.provided_reinforcement(diameter_layer1))
+                                * self.flex_rebar_count
+                                + (Beam.provided_reinforcement(diameter_layer2))
+                                * self.flex_rebar_count
+                            ) > req:
+                                target[index] = (
+                                    f"{self.flex_rebar_count}T{diameter_layer1} + {self.flex_rebar_count}T{diameter_layer2}"
+                                )
+                                found = True
+                                # Assign the computed diameters to the appropriate attributes immediately after determining them
+                                if index == 0:
+                                    self.flex_top_left_dia = diameter_layer1
+                                    self.flex_top_left_dia_two = diameter_layer2
+                                elif index == 1:
+                                    self.flex_top_middle_dia = diameter_layer1
+                                    self.flex_top_middle_dia_two = diameter_layer2
+                                elif index == 2:
+                                    self.flex_top_right_dia = diameter_layer1
+                                    self.flex_top_right_dia_two = diameter_layer2
+                                break
+                        if found:
+                            break
+                if not found:
+                    target[index] = "Increase rebar count or re-assess"
+        else:
+            target = ["Overstressed"] * len(target)
+        self.flex_top_left_rebar_string = target[0]
+        self.flex_top_middle_rebar_string = target[1]
+        self.flex_top_right_rebar_string = target[2]

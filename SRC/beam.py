@@ -15,13 +15,13 @@ class Beam:
     comp_conc_grade: int = 0  # in MPa (n/mm^2)
     # Index 0 of this list is positive flexure, index 1 is negative flexure.
     flex_overstressed: List[bool] = field(default_factory=lambda: [False, False])
-    # Index 0 of this list is shear, index 1 is torsion.
     req_top_flex_reinf: List[int] = field(default_factory=lambda: [0, 0, 0])  # in mm^2
     req_bot_flex_reinf: List[int] = field(default_factory=lambda: [0, 0, 0])  # in mm^2
     req_torsion_flex_reinf: List[int] = field(
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
     shear_force: List[int] = field(default_factory=lambda: [0, 0, 0])  # in kN
+    # Index 0 of this list is shear, index 1 is torsion.
     shear_overstressed: List[bool] = field(default_factory=lambda: [False, False])
     req_shear_reinf: List[int] = field(default_factory=lambda: [0, 0, 0])  # in mm^2
     req_torsion_reinf: List[int] = field(default_factory=lambda: [0, 0, 0])  # in mm^2
@@ -88,13 +88,13 @@ class Beam:
 
     @staticmethod
     def provided_reinforcement(diameter: int) -> float:
-        """This is the main function to provide reinforcement and is utilised for clarity purposes.
+        """A static function which calculates the area of a circle.
 
         Args:
-            diameter (int): The selected diameter to provide.
+            diameter (int): The selected diameter to calculate the area of a circle.
 
         Returns:
-            float: An integer representing the provided reinforcement area in mm^2.
+            float: The provided reinforcement area in mm^2.
         """
         return np.pi * (diameter / 2) ** 2
 
