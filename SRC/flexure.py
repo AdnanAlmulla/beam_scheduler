@@ -1,4 +1,4 @@
-from beam import Beam
+from Beam import Beam
 from dataclasses import field
 from typing import List
 
@@ -11,10 +11,44 @@ class Flexure:
         self.flex_rebar_count: int = 0
         self.flex_rebar_dia: List[int] = field(default_factory=lambda: [16, 20, 25, 32])
         self.top_flex_rebar: dict = field(
-            default_factory=lambda: {"rebar_text": "", "provided_reinf": 0}
+            default_factory=lambda: {
+                "left": {"rebar_text": "", "provided_reinf": 0},
+                "middle": {"rebar_text": "", "provided_reinf": 0},
+                "right": {"rebar_text": "", "provided_reinf": 0},
+            }
         )
         self.bot_flex_rebar: dict = field(
-            default_factory=lambda: {"rebar_text": "", "provided_reinf": 0}
+            default_factory=lambda: {
+                "left": {"rebar_text": "", "provided_reinf": 0},
+                "middle": {"rebar_text": "", "provided_reinf": 0},
+                "right": {"rebar_text": "", "provided_reinf": 0},
+            }
+        )
+        self.top_dia: dict = field(
+            default_factory=lambda: {
+                "left": {
+                    "diameter_layer1": 0,
+                },
+                "middle": {
+                    "diameter_layer1": 0,
+                },
+                "right": {
+                    "diameter_layer1": 0,
+                },
+            }
+        )
+        self.bot_dia: dict = field(
+            default_factory=lambda: {
+                "left": {
+                    "diameter_layer1": 0,
+                },
+                "middle": {
+                    "diameter_layer1": 0,
+                },
+                "right": {
+                    "diameter_layer1": 0,
+                },
+            }
         )
 
     def get_long_count(self):
@@ -42,19 +76,17 @@ class Flexure:
             self.beam.req_torsion_flex_reinf = [0, 0, 0]
 
     def get_top_flex_rebar(self):
-        """This method loops through the required top flexural reinforcement and provides a string
-        containing the schedule for each part of the beam. Once the string has been made, the schedule
-        for each section of the beam is indexed to its relevant attribute."""
-        target = self.req_top_flex_reinf.copy()
+        """This method loops through the required top flexural reinforcement and provides the string
+        and provided area of reinforcement for each part of the beam."""
         # Index 0 of this list is positive flexure, index 1 is negative flexure.
         if self.beam.flex_overstressed[1] is not True:
-            for index, req in enumerate(target):
+            for index, requirement in enumerate(self.beam.req_top_flex_reinf):
                 found = False
                 for diameter_layer1 in self.flex_rebar_dia:
                     if (
                         (Beam.provided_reinforcement(diameter_layer1))
-                        * self.flex_rebar_count  # type: ignore
-                    ) > req:
+                        * self.flex_rebar_count
+                    ) > requirement:
                         target[index] = f"{self.flex_rebar_count}T{diameter_layer1}"
                         found = True
                         # Assign the computed diameter to the appropriate attributes immediately after determining them
@@ -73,7 +105,7 @@ class Flexure:
                                 * self.flex_rebar_count
                                 + (Beam.provided_reinforcement(diameter_layer2))
                                 * self.flex_rebar_count
-                            ) > req:
+                            ) > requirement:
                                 target[index] = (
                                     f"{self.flex_rebar_count}T{diameter_layer1} + {self.flex_rebar_count}T{diameter_layer2}"
                                 )

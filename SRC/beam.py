@@ -5,7 +5,7 @@ from typing import List
 
 @dataclass
 class Beam:
-    """This class encapsulates the necessary attributes to return a solved beam reinforcement object."""
+    """This data class encapsulates the necessary attributes to return a solved beam reinforcement object."""
 
     storey: str = "No storey provided."
     etabs_id: str = "No ETABS ID."

@@ -1,6 +1,7 @@
 import pandas as pd
-from beam import Beam
-from flexure import Flexure
+from Beam import Beam
+from BeamDesign import BeamDesign
+
 
 excel_file = r"assets\test run.xlsx"
 
@@ -12,10 +13,8 @@ span_df = pd.read_excel(excel_file, sheet_name=2, header=1)
 flexural_df = flexural_df.drop([0])
 shear_df = shear_df.drop([0])
 span_df = span_df.drop([0])
-
 # Fetch the beam stories from the span df.
 stories = span_df["Story"].tolist()
-
 # Slice through the flexural df and get the etabs id.
 etabs_ids = span_df["Label"].tolist()
 
@@ -45,7 +44,6 @@ if dimension_error_check is False:
     nested_neg_combo_list = [
         neg_combo_list[i : i + 3] for i in range(0, len(neg_combo_list), 3)
     ]
-
     # Take the nested lists and return True if any of the combos are overstressed.
     checked_pos_combo_list = [
         True
@@ -63,7 +61,6 @@ if dimension_error_check is False:
     flexural_combo = [
         [pos, neg] for pos, neg in zip(checked_pos_combo_list, checked_neg_combo_list)
     ]
-
     # Take the required top flexural reinforcement and put it in a nested list.
     # Index 0 is left, Index 1 is middle, and Index 2 is right.
     top_flex_reinf_needed = flexural_df["As Top"].tolist()
@@ -71,7 +68,6 @@ if dimension_error_check is False:
         top_flex_reinf_needed[i : i + 3]
         for i in range(0, len(top_flex_reinf_needed), 3)
     ]
-
     # Check if any of the beams are overstressed. If they are, the values get replaced with O/S.
     top_flex_reinf_needed = [
         [
@@ -80,7 +76,6 @@ if dimension_error_check is False:
         ]
         for sublist in top_flex_reinf_needed
     ]
-
     # Repeat the same as above but for required bottom flexural reinforcement.
     bot_flex_reinf_needed = flexural_df["As Bot"].tolist()
     bot_flex_reinf_needed = [
@@ -94,7 +89,6 @@ if dimension_error_check is False:
         ]
         for sublist in bot_flex_reinf_needed
     ]
-
     # Take the required flexural torsion reinforcement and put it in a nested list.
     # Index 0 is left, Index 1 is middle, and Index 2 is right.
     flex_torsion_reinf_needed = shear_df["TLngRebar (Al)"].tolist()
@@ -102,7 +96,6 @@ if dimension_error_check is False:
         flex_torsion_reinf_needed[i : i + 3]
         for i in range(0, len(flex_torsion_reinf_needed), 3)
     ]
-
     # Check if any of the beams are overstressed in torsion. If they are, values get replaced with O/S.
     flex_torsion_reinf_needed = [
         [
@@ -111,19 +104,16 @@ if dimension_error_check is False:
         ]
         for sublist in flex_torsion_reinf_needed
     ]
-
     # Take each beams shear force (kN) and put it in a nested list.
     shear_force_list = shear_df["Shear Force"].tolist()
     nested_shear_force = [
         shear_force_list[i : i + 3] for i in range(0, len(shear_force_list), 3)
     ]
-
     # Take each beam's shear combo and put it in a nested list.
     shear_combo_list = shear_df["Shear Design Combo"].tolist()
     nested_shear_combo = [
         shear_combo_list[i : i + 3] for i in range(0, len(shear_combo_list), 3)
     ]
-
     # Take the nested list and return OK or OS as a string in a list.
     checked_shear_combo = [
         True
@@ -131,32 +121,27 @@ if dimension_error_check is False:
         else False
         for sublist in nested_shear_combo
     ]
-
     # Repeat the same as shear combo, except for torsion combo.
     torsion_combo_list = shear_df["TTrnCombo"].tolist()
     nested_torsion_combo = [
         torsion_combo_list[i : i + 3] for i in range(0, len(torsion_combo_list), 3)
     ]
-
     checked_torsion_combo = [
         True
         if any(str(element).strip().lower() in ["o/s", "nan"] for element in sublist)
         else False
         for sublist in nested_torsion_combo
     ]
-
     shear_combo = [
         [shear, torsion]
         for shear, torsion in zip(checked_shear_combo, checked_torsion_combo)
     ]
-
     # Take the required shear reinforcement and put it in a nested list.
     # Index 0 is left, Index 1 is middle, and Index 2 is right.
     shear_reinf_needed = shear_df["VRebar (Av/s)"].tolist()
     shear_reinf_needed = [
         shear_reinf_needed[i : i + 3] for i in range(0, len(shear_reinf_needed), 3)
     ]
-
     # Check if any of the beams are overstressed in shear. If they are, values get replaced with O/S.
     shear_reinf_needed = [
         [
@@ -165,7 +150,6 @@ if dimension_error_check is False:
         ]
         for sublist in shear_reinf_needed
     ]
-
     # Repeat the same as required shear reinforcement but for required torsion reinforcement.
     torsion_reinf_needed = shear_df["TTrnRebar (At/s)"].tolist()
     torsion_reinf_needed = [
@@ -214,16 +198,15 @@ if dimension_error_check is False:
             torsion_reinf_needed,
         )
     ]
+    designed_beams = []  # List to hold all the designed beams.
     # Begin with for loop and create attributes for each beam instance to undertake calculations.
     for beam in beam_instances:
-        # First undertake flexural design and assign a flexural_reinf object:
-        flexural_reinf = Flexure(beam)
-
-        # Get the longitudinal rebar count.
-        flexural_reinf.get_long_count()
-
-        # Split the torsion reinforcement to the top and bottom rebar if the depth <= 700mm.
-        flexural_reinf.flex_torsion_splitting()
+        # Instantiate the Beam Design object.
+        beam_design = BeamDesign(beam)
+        # Undertake the process of flexural design.
+        beam_design.calculate_flexural_design()
+        # Append all the designed beams to the designed beams list.
+        designed_beams.append(beam_design)
 
         # # Begin calculating the required top and bottom longitudinal reinforcement.
         # beam.get_top_flex_rebar_string()
