@@ -216,7 +216,7 @@ if dimension_error_check is False:
     ]
     # Begin with for loop and create attributes for each beam instance to undertake calculations.
     for beam in beam_instances:
-        # First undertake flexural design:
+        # First undertake flexural design and assign a flexural_reinf object:
         flexural_reinf = Flexure(beam)
 
         # Get the longitudinal rebar count.

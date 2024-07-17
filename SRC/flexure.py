@@ -4,13 +4,18 @@ from typing import List
 
 
 class Flexure:
-    """This class inherits Beam objects and provides new attributes relating to flexural design.
-    This class focusses on providing flexural and sideface reinforcement."""
+    """This class inherits Beam objects and provides new attributes relating to flexural design."""
 
     def __init__(self, beam: Beam):
         self.beam = beam
         self.flex_rebar_count: int = 0
         self.flex_rebar_dia: List[int] = field(default_factory=lambda: [16, 20, 25, 32])
+        self.top_flex_rebar: dict = field(
+            default_factory=lambda: {"rebar_text": "", "provided_reinf": 0}
+        )
+        self.bot_flex_rebar: dict = field(
+            default_factory=lambda: {"rebar_text": "", "provided_reinf": 0}
+        )
 
     def get_long_count(self):
         """This method takes a defined instance and calculates the required longitudinal rebar count based on its width."""
