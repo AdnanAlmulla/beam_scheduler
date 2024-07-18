@@ -208,13 +208,6 @@ if dimension_error_check is False:
         # Append all the designed beams to the designed beams list.
         designed_beams.append(beam_design)
 
-        # # Begin calculating the required top and bottom longitudinal reinforcement.
-        # beam.get_top_flex_rebar_string()
-        # beam.get_top_flex_rebar_area()
-
-        # beam.get_bot_flex_rebar_string()
-        # beam.get_bot_flex_rebar_area()
-
         # # Calculate the residual rebar obtained from the provided against the required.
         # beam.get_residual_rebar()
 
@@ -245,17 +238,14 @@ if dimension_error_check is False:
         # # Grab the index of the side face reinforcement with the highest area.
         # beam.get_index_for_side_face_reinf()
 
-# for design_beam in designed_beams:
-#     if design_beam.flexural_design.top_flex_rebar["left"]["solved"] is not True:
-#         print(design_beam.beam.etabs_id)
-#         print(design_beam.flexural_design.top_flex_rebar["left"]["rebar_text"])
+# print(designed_beams[4].beam.req_top_flex_reinf)
+# print(designed_beams[4].flexural_design.top_flex_rebar["left"]["rebar_text"])
+# print(designed_beams[4].flexural_design.top_flex_rebar["left"]["provided_reinf"])
+# print(designed_beams[4].flexural_design.top_flex_rebar["left"]["diameter"])
 
-for design_beam in designed_beams:
-    if (
-        design_beam.beam.etabs_id == "B677"
-        and design_beam.beam.storey == "Attic Level-3"
-    ):
-        print(design_beam.beam.req_top_flex_reinf)
-        print(design_beam.flexural_design.top_flex_rebar["left"]["rebar_text"])
-        print(design_beam.flexural_design.top_flex_rebar["left"]["provided_reinf"])
-        print(design_beam.flexural_design.top_flex_rebar["left"]["diameter"])
+
+print(designed_beams[4].beam.req_bot_flex_reinf)
+# print(designed_beams[4].beam.span)
+print(designed_beams[4].flexural_design.bot_flex_rebar["middle"]["rebar_text"])
+print(designed_beams[4].flexural_design.bot_flex_rebar["middle"]["provided_reinf"])
+print(designed_beams[4].flexural_design.bot_flex_rebar["middle"]["diameter"])

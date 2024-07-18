@@ -22,4 +22,4 @@ class BeamDesign:
         # Split the torsion reinforcement to the top and bottom rebar if the depth <= 700mm.
         self.flexural_design.flex_torsion_splitting()
         # Obtain the required top and bottom flexural reinforcement.
-        self.flexural_design.get_top_flex_rebar()
+        self.flexural_design.get_flex_rebar()
