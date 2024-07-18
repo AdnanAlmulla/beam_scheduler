@@ -1,5 +1,4 @@
 from Beam import Beam
-from dataclasses import field
 from typing import List
 
 
@@ -9,47 +8,47 @@ class Flexure:
     def __init__(self, beam: Beam):
         self.beam = beam
         self.flex_rebar_count: int = 0
-        self.flex_rebar_dia: List[int] = field(default_factory=lambda: [16, 20, 25, 32])
-        self.top_flex_rebar: dict = field(
-            default_factory=lambda: {
-                "left": {"rebar_text": "", "provided_reinf": 0},
-                "middle": {"rebar_text": "", "provided_reinf": 0},
-                "right": {"rebar_text": "", "provided_reinf": 0},
-            }
-        )
-        self.bot_flex_rebar: dict = field(
-            default_factory=lambda: {
-                "left": {"rebar_text": "", "provided_reinf": 0},
-                "middle": {"rebar_text": "", "provided_reinf": 0},
-                "right": {"rebar_text": "", "provided_reinf": 0},
-            }
-        )
-        self.top_dia: dict = field(
-            default_factory=lambda: {
-                "left": {
-                    "diameter_layer1": 0,
-                },
-                "middle": {
-                    "diameter_layer1": 0,
-                },
-                "right": {
-                    "diameter_layer1": 0,
-                },
-            }
-        )
-        self.bot_dia: dict = field(
-            default_factory=lambda: {
-                "left": {
-                    "diameter_layer1": 0,
-                },
-                "middle": {
-                    "diameter_layer1": 0,
-                },
-                "right": {
-                    "diameter_layer1": 0,
-                },
-            }
-        )
+        self.flex_rebar_dia: List[int] = [16, 20, 25, 32]
+        self.top_flex_rebar: dict = {
+            "left": {
+                "rebar_text": "",
+                "provided_reinf": 0,
+                "diameter": [],
+                "solved": False,
+            },
+            "middle": {
+                "rebar_text": "",
+                "provided_reinf": 0,
+                "diameter": [],
+                "solved": False,
+            },
+            "right": {
+                "rebar_text": "",
+                "provided_reinf": 0,
+                "diameter": [],
+                "solved": False,
+            },
+        }
+        self.bot_flex_rebar: dict = {
+            "left": {
+                "rebar_text": "",
+                "provided_reinf": 0,
+                "diameter": [],
+                "solved": False,
+            },
+            "middle": {
+                "rebar_text": "",
+                "provided_reinf": 0,
+                "diameter": [],
+                "solved": False,
+            },
+            "right": {
+                "rebar_text": "",
+                "provided_reinf": 0,
+                "diameter": [],
+                "solved": False,
+            },
+        }
 
     def get_long_count(self):
         """This method takes a defined instance and calculates the required longitudinal rebar count based on its width."""
@@ -75,58 +74,63 @@ class Flexure:
             ]
             self.beam.req_torsion_flex_reinf = [0, 0, 0]
 
+    def __find_rebar_configuration(self, requirement: int) -> dict:
+        """This method finds the required rebar configuration for flexural design.
+
+        Args:
+            requirement (int): The required rebar area (mm^2)
+
+        Returns:
+            dict: A dictionary containing the rebar text, provided reinforcement area, diameter of each layer,
+            and whether the beam was solved or not.
+        """
+        for diameter_layer1 in self.flex_rebar_dia:
+            provided = (
+                Beam.provided_reinforcement(diameter_layer1) * self.flex_rebar_count
+            )
+            if provided > requirement:
+                return {
+                    "rebar_text": f"{self.flex_rebar_count}T{diameter_layer1}",
+                    "provided_reinf": provided,
+                    "diameter": [diameter_layer1],
+                    "solved": True,
+                }
+        for diameter_layer2 in self.flex_rebar_dia:
+            for diameter_layer1 in self.flex_rebar_dia:
+                provided = (
+                    Beam.provided_reinforcement(diameter_layer1) * self.flex_rebar_count
+                ) + (
+                    Beam.provided_reinforcement(diameter_layer2) * self.flex_rebar_count
+                )
+                if provided > requirement:
+                    return {
+                        "rebar_text": f"{self.flex_rebar_count}T{diameter_layer1} + {self.flex_rebar_count}T{diameter_layer2}",
+                        "provided_reinf": provided,
+                        "diameter": [diameter_layer1, diameter_layer2],
+                        "solved": True,
+                    }
+        return {
+            "rebar_text": "Required rebar exceeds two layers. Please assess.",
+            "provided_reinf": 0,
+            "diameter": [],
+            "solved": False,
+        }
+
     def get_top_flex_rebar(self):
-        """This method loops through the required top flexural reinforcement and provides the string
-        and provided area of reinforcement for each part of the beam."""
+        """This method loops through the required top flexural reinforcement and provides the string,
+        provided area of reinforcement, and diameter for each part of the beam."""
+        locations = ["left", "middle", "right"]
         # Index 0 of this list is positive flexure, index 1 is negative flexure.
-        if self.beam.flex_overstressed[1] is not True:
-            for index, requirement in enumerate(self.beam.req_top_flex_reinf):
-                found = False
-                for diameter_layer1 in self.flex_rebar_dia:
-                    if (
-                        (Beam.provided_reinforcement(diameter_layer1))
-                        * self.flex_rebar_count
-                    ) > requirement:
-                        target[index] = f"{self.flex_rebar_count}T{diameter_layer1}"
-                        found = True
-                        # Assign the computed diameter to the appropriate attributes immediately after determining them
-                        if index == 0:
-                            self.flex_top_left_dia = diameter_layer1
-                        elif index == 1:
-                            self.flex_top_middle_dia = diameter_layer1
-                        elif index == 2:
-                            self.flex_top_right_dia = diameter_layer1
-                        break
-                if not found:
-                    for diameter_layer2 in self.flex_rebar_dia:
-                        for diameter_layer1 in self.flex_rebar_dia:
-                            if (
-                                (Beam.provided_reinforcement(diameter_layer1))
-                                * self.flex_rebar_count
-                                + (Beam.provided_reinforcement(diameter_layer2))
-                                * self.flex_rebar_count
-                            ) > requirement:
-                                target[index] = (
-                                    f"{self.flex_rebar_count}T{diameter_layer1} + {self.flex_rebar_count}T{diameter_layer2}"
-                                )
-                                found = True
-                                # Assign the computed diameters to the appropriate attributes immediately after determining them
-                                if index == 0:
-                                    self.flex_top_left_dia = diameter_layer1
-                                    self.flex_top_left_dia_two = diameter_layer2
-                                elif index == 1:
-                                    self.flex_top_middle_dia = diameter_layer1
-                                    self.flex_top_middle_dia_two = diameter_layer2
-                                elif index == 2:
-                                    self.flex_top_right_dia = diameter_layer1
-                                    self.flex_top_right_dia_two = diameter_layer2
-                                break
-                        if found:
-                            break
-                if not found:
-                    target[index] = "Increase rebar count or re-assess"
-        else:
-            target = ["Overstressed"] * len(target)
-        self.flex_top_left_rebar_string = target[0]
-        self.flex_top_middle_rebar_string = target[1]
-        self.flex_top_right_rebar_string = target[2]
+        for index, (location, requirement) in enumerate(
+            zip(locations, self.beam.req_top_flex_reinf)
+        ):
+            if self.beam.flex_overstressed[1] is True:
+                self.top_flex_rebar[location]["rebar_text"] = "Overstressed"
+            else:
+                result = self.__find_rebar_configuration(requirement)
+                self.top_flex_rebar[location]["rebar_text"] = result["rebar_text"]
+                self.top_flex_rebar[location]["provided_reinf"] = result[
+                    "provided_reinf"
+                ]
+                self.top_flex_rebar[location]["diameter"] = result["diameter"]
+                self.top_flex_rebar[location]["solved"] = result["solved"]
