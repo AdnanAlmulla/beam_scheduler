@@ -57,7 +57,8 @@ class Flexure:
         }
 
     def __repr__(self):
-        return f"\nLongitudinal rebar count: {self.flex_rebar_count},\nTop flexural rebar: {self.top_flex_rebar},\nBottom Flexural rebar: {self.bot_flex_rebar}"
+        return f"""Longitudinal rebar count: {self.flex_rebar_count}, \nTop flexural rebar: {self.top_flex_rebar}, 
+Bottom flexural rebar: {self.bot_flex_rebar}, \nResidual flexural rebar: {self.residual_rebar}"""
 
     def get_long_count(self):
         """This method takes a defined instance and calculates the required longitudinal rebar count based on its width."""

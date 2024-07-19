@@ -243,4 +243,4 @@ if dimension_error_check is False:
 # print(designed_beams[5].beam.req_bot_flex_reinf)
 # print(designed_beams[5].flexural_design)
 
-print(designed_beams[5].flexural_design.residual_rebar)
+print(designed_beams[5].flexural_design)
