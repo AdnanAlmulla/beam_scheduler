@@ -3,7 +3,7 @@ from Beam import Beam
 from BeamDesign import BeamDesign
 
 
-excel_file = r"assets\test run.xlsx"
+excel_file = r"assets\run_2.xlsx"
 
 flexural_df = pd.read_excel(excel_file, sheet_name=0, header=1)
 shear_df = pd.read_excel(excel_file, sheet_name=1, header=1)
@@ -207,10 +207,6 @@ if dimension_error_check is False:
         beam_design.calculate_flexural_design()
         # Append all the designed beams to the designed beams list.
         designed_beams.append(beam_design)
-
-        # # Calculate the residual rebar obtained from the provided against the required.
-        # beam.get_residual_rebar()
-
         # # Calculate the required shear legs based on the beams width.
         # beam.get_shear_legs()
 
@@ -243,9 +239,8 @@ if dimension_error_check is False:
 # print(designed_beams[4].flexural_design.top_flex_rebar["left"]["provided_reinf"])
 # print(designed_beams[4].flexural_design.top_flex_rebar["left"]["diameter"])
 
+# print(designed_beams[5].beam.req_top_flex_reinf)
+# print(designed_beams[5].beam.req_bot_flex_reinf)
+# print(designed_beams[5].flexural_design)
 
-print(designed_beams[4].beam.req_bot_flex_reinf)
-# print(designed_beams[4].beam.span)
-print(designed_beams[4].flexural_design.bot_flex_rebar["middle"]["rebar_text"])
-print(designed_beams[4].flexural_design.bot_flex_rebar["middle"]["provided_reinf"])
-print(designed_beams[4].flexural_design.bot_flex_rebar["middle"]["diameter"])
+print(designed_beams[5].flexural_design.residual_rebar)

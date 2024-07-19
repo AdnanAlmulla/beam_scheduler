@@ -50,6 +50,11 @@ class Flexure:
                 "solved": False,
             },
         }
+        self.residual_rebar: dict = {
+            "left": 0,
+            "middle": 0,
+            "right": 0,
+        }
 
     def __repr__(self):
         return f"\nLongitudinal rebar count: {self.flex_rebar_count},\nTop flexural rebar: {self.top_flex_rebar},\nBottom Flexural rebar: {self.bot_flex_rebar}"
@@ -162,3 +167,58 @@ class Flexure:
             "diameter": [],
             "solved": False,
         }
+
+    def assess_feasibility(self):
+        """This method determines the feasibility of the beam flexural rebar based on its span.
+        Beams with a span of 3 metres or less will have its reinforcement continous based on the
+        highest provided value."""
+        # Process top flexural reinforcement:
+        largest_area_provided = float("-inf")
+        selected_combination = None
+        # Index 0 of this list is positive flexure, index 1 is negative flexure.
+        if self.beam.flex_overstressed[1] is not True and self.beam.span <= 3000:
+            for location, properties in self.top_flex_rebar.items():
+                if properties["solved"]:
+                    if properties["provided_reinf"] > largest_area_provided:
+                        largest_area_provided = properties["provided_reinf"]
+                        selected_combination = location
+            for location, properties in self.top_flex_rebar.items():
+                if properties["solved"]:
+                    self.top_flex_rebar[location] = self.top_flex_rebar[
+                        selected_combination
+                    ]
+
+        # Process bottom flexural reinforcement:
+        # Reset largest_area_provided and selected_combination for bottom reinforcement
+        largest_area_provided = float("-inf")
+        selected_combination = None
+        # Index 0 of this list is positive flexure, index 1 is negative flexure.
+        if self.beam.flex_overstressed[0] is not True and self.beam.span <= 3000:
+            for location, properties in self.bot_flex_rebar.items():
+                if properties["solved"]:
+                    if properties["provided_reinf"] > largest_area_provided:
+                        largest_area_provided = properties["provided_reinf"]
+                        selected_combination = location
+            for location, properties in self.bot_flex_rebar.items():
+                if properties["solved"]:
+                    self.bot_flex_rebar[location] = self.bot_flex_rebar[
+                        selected_combination
+                    ]
+
+    def get_residual_rebar(self):
+        """This method takes the obtained flexural rebar area in both the top and bottom and subtracts them by
+        their relevant required area. It then adds the remaining top and bottom residual together."""
+        for index, location in enumerate(self.residual_rebar):
+            top_residual = (
+                self.top_flex_rebar[location]["provided_reinf"]
+                - self.beam.req_top_flex_reinf[index]
+                if self.top_flex_rebar[location]["solved"]
+                else 0
+            )
+            bot_residual = (
+                self.bot_flex_rebar[location]["provided_reinf"]
+                - self.beam.req_bot_flex_reinf[index]
+                if self.bot_flex_rebar[location]["solved"]
+                else 0
+            )
+            self.residual_rebar[location] = top_residual + bot_residual

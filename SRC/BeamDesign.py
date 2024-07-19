@@ -13,6 +13,9 @@ class BeamDesign:
         self.shear_design: object = None
         self.sideface_desgin: object = None
 
+    def __repr__(self):
+        return f"{self.beam}"
+
     def calculate_flexural_design(self):
         """This method undertakes the flexural design."""
         # First instantiate the flexure object.
@@ -23,3 +26,7 @@ class BeamDesign:
         self.flexural_design.flex_torsion_splitting()
         # Obtain the required top and bottom flexural reinforcement.
         self.flexural_design.get_flex_rebar()
+        # Check if the calculated rebar is feasible and alter it if not.abs
+        self.flexural_design.assess_feasibility()
+        # Calculate the residual rebar obtained from the provided rebar.
+        self.flexural_design.get_residual_rebar()
