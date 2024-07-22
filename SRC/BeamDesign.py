@@ -1,5 +1,7 @@
 from Beam import Beam
 from Flexure import Flexure
+from Shear import Shear
+# TODO: fix imports to be inline with google style guide
 
 
 class BeamDesign:
@@ -30,3 +32,15 @@ class BeamDesign:
         self.flexural_design.assess_feasibility()
         # Calculate the residual rebar obtained from the provided rebar.
         self.flexural_design.get_residual_rebar()
+
+    def calculate_shear_design(self):
+        """This method undertakes the shear design."""
+        # First instantiate the shear object.
+        self.shear_design = Shear(self.beam, self.flexural_design)
+        # Calculate the required shear links count.
+        self.shear_design.get_shear_links_count()
+        # Assess if transverse shear spacing needs to be checked.
+        self.shear_design.assess_transverse_shear_spacing()
+        # Get the total required shear reinforcement.
+        self.shear_design.get_total_shear_req()
+        # self.shear_design.get_min_shear_spacing()

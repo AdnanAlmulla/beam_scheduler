@@ -1,6 +1,7 @@
 import numpy as np
 from dataclasses import dataclass, field
 from typing import List
+# TODO: fix imports to be inline with google style guide
 
 
 @dataclass
@@ -13,7 +14,7 @@ class Beam:
     depth: int = 0  # in mm
     span: int = 0  # in mm
     comp_conc_grade: int = 0  # in MPa (n/mm^2)
-    # Index 0 of this list is positive flexure, index 1 is negative flexure.
+    # * Index 0 of this list is positive flexure, index 1 is negative flexure.
     flex_overstressed: List[bool] = field(default_factory=lambda: [False, False])
     req_top_flex_reinf: List[int] = field(default_factory=lambda: [0, 0, 0])  # in mm^2
     req_bot_flex_reinf: List[int] = field(default_factory=lambda: [0, 0, 0])  # in mm^2
@@ -21,7 +22,7 @@ class Beam:
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
     shear_force: List[int] = field(default_factory=lambda: [0, 0, 0])  # in kN
-    # Index 0 of this list is shear, index 1 is torsion.
+    # * Index 0 of this list is shear, index 1 is torsion.
     shear_overstressed: List[bool] = field(default_factory=lambda: [False, False])
     req_shear_reinf: List[int] = field(default_factory=lambda: [0, 0, 0])  # in mm^2
     req_torsion_reinf: List[int] = field(default_factory=lambda: [0, 0, 0])  # in mm^2
@@ -30,73 +31,73 @@ class Beam:
     def __post_init__(self):
         self.eff_depth = 0.8 * self.depth
 
-    @staticmethod
-    def get_width(width: str) -> int:
-        """This function cleans and retrieves the width of the beam.
-        Args:
-            width (str): Width in column of dataframe.
-        Returns:
-            int: Width of beam.
-        """
-        width_list = list(width)
-        width_list = [el.lower() for el in width_list]
-        excluded_values = ["p", "t", "b", "-", "_", "c", "/", "s", "w"]
-        cleaned_width_list = [ex for ex in width_list if ex not in excluded_values]
-        index_list = cleaned_width_list.index("x")
-        width_list = cleaned_width_list[:index_list]
-        true_width = "".join(width_list)
-        return int(true_width)
 
-    @staticmethod
-    def get_depth(depth: str) -> int:
-        """This function cleans and retrieves the depth of the beam.
+def get_width(width: str) -> int:
+    """This function cleans and retrieves the width of the beam.
+    Args:
+        width (str): Width in column of dataframe.
+    Returns:
+        int: Width of beam.
+    """
+    width_list = list(width)
+    width_list = [el.lower() for el in width_list]
+    excluded_values = ["p", "t", "b", "-", "_", "c", "/", "s", "w"]
+    cleaned_width_list = [ex for ex in width_list if ex not in excluded_values]
+    index_list = cleaned_width_list.index("x")
+    width_list = cleaned_width_list[:index_list]
+    true_width = "".join(width_list)
+    return int(true_width)
 
-        Args:
-            depth (str): Depth in column of dataframe.
 
-        Returns:
-            int: Depth of beam.
-        """
-        depth_list = list(depth)
-        depth_list = [el.lower() for el in depth_list]
-        excluded_values = ["p", "t", "b", "-", "_", "c", "/", "s", "w"]
-        cleaned_depth_list = [ex for ex in depth_list if ex not in excluded_values]
-        index_list = cleaned_depth_list.index("x")
-        depth_list = cleaned_depth_list[1 + index_list : -4]
-        true_depth = "".join(depth_list)
-        return int(true_depth)
+def get_depth(depth: str) -> int:
+    """This function cleans and retrieves the depth of the beam.
 
-    @staticmethod
-    def get_comp_conc_grade(comp_conc_grade: str) -> int:
-        """This function cleans and retrieves the cylinderical concrete compressive strength, fc'.
+    Args:
+        depth (str): Depth in column of dataframe.
 
-        Args:
-            comp_conc_grade (str): the section string to clean and get the compressive strength of the beam from.
+    Returns:
+        int: Depth of beam.
+    """
+    depth_list = list(depth)
+    depth_list = [el.lower() for el in depth_list]
+    excluded_values = ["p", "t", "b", "-", "_", "c", "/", "s", "w"]
+    cleaned_depth_list = [ex for ex in depth_list if ex not in excluded_values]
+    index_list = cleaned_depth_list.index("x")
+    depth_list = cleaned_depth_list[1 + index_list : -4]
+    true_depth = "".join(depth_list)
+    return int(true_depth)
 
-        Returns:
-            int: the cylincderial concrete compressive strength, fc'.
-        """
-        section_list = list(comp_conc_grade)
-        section_list = [el.lower() for el in section_list]
-        excluded_values = ["p", "t", "b", "-", "_", "x", "s", "w"]
-        excluded_section_list = [ex for ex in section_list if ex not in excluded_values]
-        index_c = excluded_section_list.index("c")
-        index_slash = excluded_section_list.index("/")
-        retrieved_value = excluded_section_list[1 + index_c : index_slash]
-        conc_grade = "".join(retrieved_value)
-        return int(conc_grade)
 
-    @staticmethod
-    def provided_reinforcement(diameter: int) -> float:
-        """A static function which calculates the area of a circle.
+def get_comp_conc_grade(comp_conc_grade: str) -> int:
+    """This function cleans and retrieves the cylinderical concrete compressive strength, fc'.
 
-        Args:
-            diameter (int): The selected diameter to calculate the area of a circle.
+    Args:
+        comp_conc_grade (str): the section string to clean and get the compressive strength of the beam from.
 
-        Returns:
-            float: The provided reinforcement area in mm^2.
-        """
-        return np.pi * (diameter / 2) ** 2
+    Returns:
+        int: the cylincderial concrete compressive strength, fc'.
+    """
+    section_list = list(comp_conc_grade)
+    section_list = [el.lower() for el in section_list]
+    excluded_values = ["p", "t", "b", "-", "_", "x", "s", "w"]
+    excluded_section_list = [ex for ex in section_list if ex not in excluded_values]
+    index_c = excluded_section_list.index("c")
+    index_slash = excluded_section_list.index("/")
+    retrieved_value = excluded_section_list[1 + index_c : index_slash]
+    conc_grade = "".join(retrieved_value)
+    return int(conc_grade)
+
+
+def provided_reinforcement(diameter: int) -> float:
+    """A static function which calculates the area of a circle.
+
+    Args:
+        diameter (int): The selected diameter to calculate the area of a circle.
+
+    Returns:
+        float: The provided reinforcement area in mm^2.
+    """
+    return np.pi * (diameter / 2) ** 2
 
 
 # class Beam:
@@ -204,85 +205,6 @@ class Beam:
 #         self.req_bot_right_flex_reinf = 0
 #         self.transverse_space_check = None
 #         self.final_shear_legs = 0
-
-#     def get_residual_rebar(self):
-#         """This method takes the obtained flexural rebar area in both the top and bottom and subtracts them by
-#         their relevant required area. It then adds the remaining top and bottom residual together.
-#         """
-#         top_combined = [
-#             self.flex_top_left_rebar_area,
-#             self.flex_top_middle_rebar_area,
-#             self.flex_top_right_rebar_area,
-#         ]
-#         bot_combined = [
-#             self.flex_bot_left_rebar_area,
-#             self.flex_bot_middle_rebar_area,
-#             self.flex_bot_right_rebar_area,
-#         ]
-#         if all(isinstance(x, (float, int)) for x in top_combined) and all(
-#             isinstance(x, (float, int)) for x in bot_combined
-#         ):
-#             top_left_residual = (
-#                 self.flex_top_left_rebar_area - self.req_top_flex_reinf[0]
-#             )
-#             top_middle_residual = (
-#                 self.flex_top_middle_rebar_area - self.req_top_flex_reinf[1]
-#             )
-#             top_right_residual = (
-#                 self.flex_top_right_rebar_area - self.req_top_flex_reinf[2]
-#             )
-#             bot_left_residual = (
-#                 self.flex_bot_left_rebar_area - self.req_bot_flex_reinf[0]
-#             )
-#             bot_middle_residual = (
-#                 self.flex_bot_middle_rebar_area - self.req_bot_flex_reinf[1]
-#             )
-#             bot_right_residual = (
-#                 self.flex_bot_right_rebar_area - self.req_bot_flex_reinf[2]
-#             )
-#             self.left_residual_rebar = top_left_residual + bot_left_residual
-#             self.middle_residual_rebar = top_middle_residual + bot_middle_residual
-#             self.right_residual_rebar = top_right_residual + bot_right_residual
-#         else:
-#             self.left_residual_rebar = None
-#             self.middle_residual_rebar = None
-#             self.right_residual_rebar = None
-
-#     def get_total_shear_req(self):
-#         """This method calls the required shear and torsion reinforcement attributes and calculates
-#         the total shear reinforcement required. It also checks against the combos and returns whether
-#         it is O/S or not.
-#         """
-#         if self.shear_combo == "False" and self.torsion_combo == "False":
-#             shear_list = [
-#                 a + 2 * b for a, b in zip(self.req_shear_reinf, self.req_torsion_reinf)
-#             ]
-#             self.req_total_left_shear_reinf = shear_list[0]
-#             self.req_total_middle_shear_reinf = shear_list[1]
-#             self.req_total_right_shear_reinf = shear_list[2]
-#         elif self.shear_combo == "False" and self.torsion_combo == "True":
-#             self.req_total_left_shear_reinf = "O/S in Torsion"
-#             self.req_total_middle_shear_reinf = "O/S in Torsion"
-#             self.req_total_right_shear_reinf = "O/S in Torsion"
-#         elif self.shear_combo == "True" and self.torsion_combo == "False":
-#             self.req_total_left_shear_reinf = "O/S in Shear"
-#             self.req_total_middle_shear_reinf = "O/S in Shear"
-#             self.req_total_right_shear_reinf = "O/S in Shear"
-#         else:
-#             self.req_total_left_shear_reinf = "O/S in Shear and Torsion"
-#             self.req_total_middle_shear_reinf = "O/S in Shear and Torsion"
-#             self.req_total_right_shear_reinf = "O/S in Shear and Torsion"
-
-#     def get_shear_legs(self):
-#         """This method calculates the required shear legs based on the maximum transverse shear spacing as required
-#         in Table 9.7.6.2.2. of ACI 318-19.
-#         """
-#         max_transverse_spacing = min(self.eff_depth, 600)
-#         req_legs = (max_transverse_spacing - 80) / self.width
-#         if req_legs < 2:
-#             self.req_shear_legs = 2
-#         else:
-#             self.req_shear_legs = np.ceil(req_legs)
 
 #     def get_shear_string(self):
 #         """This method calculates the required shear reinforcement string.
@@ -821,28 +743,3 @@ class Beam:
 #                             self.shear_middle_dia = dia
 #                             found = True
 #                             break
-
-#     def check_transverse_shear_spacing(self):
-#         """This method assesses if the required Vs is greater or less than the nominal concrete shear capacity.
-#         as per Table 9.7.6.2.2 of ACI 318.19. If this is the case, the method returns a 'Yes', and if it isn't
-#         it returns a 'No'.
-#         """
-
-#         # Get the maximum shear force from a list of the left, middle, and right section of the beam.
-#         maximum_shear_force = max(self.shear_force)
-
-#         # The maximum shear force is being subtracted by the concrete shear force capacity as found in Table 22.5.5.1 eq (a) of ACI 318-19
-#         concrete_shear_capacity = (
-#             0.17 * np.sqrt(self.comp_conc_grade) * self.width * self.eff_depth * 10**-3
-#         )
-#         required_vs = maximum_shear_force - concrete_shear_capacity
-
-#         # The nominal shear capacity equation is obtained from Table 9.7.6.2.2 of ACI 318-19.
-#         nominal_shear_capacity = (
-#             0.33 * np.sqrt(self.comp_conc_grade) * self.width * self.eff_depth * 10**-3
-#         )
-
-#         if nominal_shear_capacity >= required_vs:
-#             self.transverse_space_check = "No"
-#         else:
-#             self.transverse_space_check = "Yes"

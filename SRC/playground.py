@@ -1,6 +1,7 @@
 import pandas as pd
-from Beam import Beam
+from Beam import Beam, get_width, get_depth, get_comp_conc_grade
 from BeamDesign import BeamDesign
+# TODO: fix imports to be inline with google style guide
 
 
 excel_file = r"assets\run_2.xlsx"
@@ -21,10 +22,10 @@ etabs_ids = span_df["Label"].tolist()
 # Slice through the flexural df and get the cleaned width, depth, and concrete comp strength.
 dimension_error_check = False
 try:
-    beam_widths = [Beam.get_width(sections) for sections in flexural_df["Section"][::3]]
-    beam_depths = [Beam.get_depth(sections) for sections in flexural_df["Section"][::3]]
+    beam_widths = [get_width(sections) for sections in flexural_df["Section"][::3]]
+    beam_depths = [get_depth(sections) for sections in flexural_df["Section"][::3]]
     concrete_grade = [
-        Beam.get_comp_conc_grade(sections) for sections in flexural_df["Section"][::3]
+        get_comp_conc_grade(sections) for sections in flexural_df["Section"][::3]
     ]
 except ValueError:
     # True means section definitions have not been titled correctly as per requirements.
@@ -205,14 +206,10 @@ if dimension_error_check is False:
         beam_design = BeamDesign(beam)
         # Undertake the process of flexural design.
         beam_design.calculate_flexural_design()
+        # Undertake the process of shear design.
+        beam_design.calculate_shear_design()
         # Append all the designed beams to the designed beams list.
         designed_beams.append(beam_design)
-        # # Calculate the required shear legs based on the beams width.
-        # beam.get_shear_legs()
-
-        # # Assess if the transverse shear spacing needs to be checked.
-        # beam.check_transverse_shear_spacing()
-
         # # Calculate the total required shear reinforcement including shear and torsion.
         # beam.get_total_shear_req()
 
@@ -234,13 +231,6 @@ if dimension_error_check is False:
         # # Grab the index of the side face reinforcement with the highest area.
         # beam.get_index_for_side_face_reinf()
 
-# print(designed_beams[4].beam.req_top_flex_reinf)
-# print(designed_beams[4].flexural_design.top_flex_rebar["left"]["rebar_text"])
-# print(designed_beams[4].flexural_design.top_flex_rebar["left"]["provided_reinf"])
-# print(designed_beams[4].flexural_design.top_flex_rebar["left"]["diameter"])
-
-# print(designed_beams[5].beam.req_top_flex_reinf)
-# print(designed_beams[5].beam.req_bot_flex_reinf)
-# print(designed_beams[5].flexural_design)
-
-print(designed_beams[5].flexural_design)
+print(designed_beams[8])
+print(designed_beams[8].flexural_design)
+print(designed_beams[8].shear_design.shear_spacing)

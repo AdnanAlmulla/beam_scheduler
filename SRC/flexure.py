@@ -1,6 +1,7 @@
-from Beam import Beam
+from Beam import Beam, provided_reinforcement
 from typing import List
 from itertools import product
+# TODO: fix imports to be inline with google style guide
 
 
 class Flexure:
@@ -58,7 +59,7 @@ class Flexure:
 
     def __repr__(self):
         return f"""Longitudinal rebar count: {self.flex_rebar_count}, \nTop flexural rebar: {self.top_flex_rebar}, 
-Bottom flexural rebar: {self.bot_flex_rebar}, \nResidual flexural rebar: {self.residual_rebar}"""
+        Bottom flexural rebar: {self.bot_flex_rebar}, \nResidual flexural rebar: {self.residual_rebar}"""
 
     def get_long_count(self):
         """This method takes a defined instance and calculates the required longitudinal rebar count based on its width."""
@@ -138,7 +139,7 @@ Bottom flexural rebar: {self.bot_flex_rebar}, \nResidual flexural rebar: {self.r
         )
         for combination in all_combinations:
             provided = sum(
-                Beam.provided_reinforcement(diameter) * self.flex_rebar_count
+                provided_reinforcement(diameter) * self.flex_rebar_count
                 for diameter in combination
             )
             if provided >= requirement:
@@ -153,7 +154,7 @@ Bottom flexural rebar: {self.bot_flex_rebar}, \nResidual flexural rebar: {self.r
                 f"{self.flex_rebar_count}T{diameter}" for diameter in sorted_combination
             )
             provided = sum(
-                Beam.provided_reinforcement(diameter) * self.flex_rebar_count
+                provided_reinforcement(diameter) * self.flex_rebar_count
                 for diameter in sorted_combination
             )
             return {
