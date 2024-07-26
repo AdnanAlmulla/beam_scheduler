@@ -1,7 +1,6 @@
 import pandas as pd
-from Beam import Beam, get_width, get_depth, get_comp_conc_grade
-from BeamDesign import BeamDesign
-# TODO: fix imports to be inline with google style guide
+import Beam
+import BeamDesign
 
 
 excel_file = r"assets\run_2.xlsx"
@@ -22,10 +21,10 @@ etabs_ids = span_df["Label"].tolist()
 # Slice through the flexural df and get the cleaned width, depth, and concrete comp strength.
 dimension_error_check = False
 try:
-    beam_widths = [get_width(sections) for sections in flexural_df["Section"][::3]]
-    beam_depths = [get_depth(sections) for sections in flexural_df["Section"][::3]]
+    beam_widths = [Beam.get_width(sections) for sections in flexural_df["Section"][::3]]
+    beam_depths = [Beam.get_depth(sections) for sections in flexural_df["Section"][::3]]
     concrete_grade = [
-        get_comp_conc_grade(sections) for sections in flexural_df["Section"][::3]
+        Beam.get_comp_conc_grade(sections) for sections in flexural_df["Section"][::3]
     ]
 except ValueError:
     # True means section definitions have not been titled correctly as per requirements.
@@ -166,7 +165,7 @@ if dimension_error_check is False:
 
     # Create beam_instances list and store all the Beam objects.
     beam_instances = [
-        Beam(
+        Beam.Beam(
             stories,
             etabs_id,
             width,
@@ -203,7 +202,7 @@ if dimension_error_check is False:
     # Begin with for loop and create attributes for each beam instance to undertake calculations.
     for beam in beam_instances:
         # Instantiate the Beam Design object.
-        beam_design = BeamDesign(beam)
+        beam_design = BeamDesign.BeamDesign(beam)
         # Undertake the process of flexural design.
         beam_design.calculate_flexural_design()
         # Undertake the process of shear design.
@@ -231,6 +230,6 @@ if dimension_error_check is False:
         # # Grab the index of the side face reinforcement with the highest area.
         # beam.get_index_for_side_face_reinf()
 
-print(designed_beams[8])
-print(designed_beams[8].flexural_design)
+print(designed_beams[0].beam)
+print(designed_beams[0].flexural_design)
 print(designed_beams[8].shear_design.shear_spacing)

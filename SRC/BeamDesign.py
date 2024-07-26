@@ -1,7 +1,6 @@
-from Beam import Beam
-from Flexure import Flexure
-from Shear import Shear
-# TODO: fix imports to be inline with google style guide
+import Beam
+import Flexure
+import Shear
 
 
 class BeamDesign:
@@ -21,7 +20,7 @@ class BeamDesign:
     def calculate_flexural_design(self):
         """This method undertakes the flexural design."""
         # First instantiate the flexure object.
-        self.flexural_design = Flexure(self.beam)
+        self.flexural_design = Flexure.Flexure(self.beam)
         # Get the longitudinal rebar count.
         self.flexural_design.get_long_count()
         # Split the torsion reinforcement to the top and bottom rebar if the depth <= 700mm.
@@ -36,7 +35,7 @@ class BeamDesign:
     def calculate_shear_design(self):
         """This method undertakes the shear design."""
         # First instantiate the shear object.
-        self.shear_design = Shear(self.beam, self.flexural_design)
+        self.shear_design = Shear.Shear(self.beam, self.flexural_design)
         # Calculate the required shear links count.
         self.shear_design.get_shear_links_count()
         # Assess if transverse shear spacing needs to be checked.

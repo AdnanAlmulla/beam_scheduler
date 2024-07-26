@@ -1,7 +1,6 @@
-from Beam import Beam, provided_reinforcement
+import Beam
 from typing import List
 from itertools import product
-# TODO: fix imports to be inline with google style guide
 
 
 class Flexure:
@@ -139,7 +138,7 @@ class Flexure:
         )
         for combination in all_combinations:
             provided = sum(
-                provided_reinforcement(diameter) * self.flex_rebar_count
+                Beam.provided_reinforcement(diameter) * self.flex_rebar_count
                 for diameter in combination
             )
             if provided >= requirement:
@@ -154,7 +153,7 @@ class Flexure:
                 f"{self.flex_rebar_count}T{diameter}" for diameter in sorted_combination
             )
             provided = sum(
-                provided_reinforcement(diameter) * self.flex_rebar_count
+                Beam.provided_reinforcement(diameter) * self.flex_rebar_count
                 for diameter in sorted_combination
             )
             return {

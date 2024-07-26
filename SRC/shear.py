@@ -1,8 +1,7 @@
-from Beam import Beam, provided_reinforcement
-from Flexure import Flexure
+import Beam
+import Flexure
 from typing import List
 import numpy as np
-# TODO: fix imports to be inline with google style guide
 
 
 class Shear:
