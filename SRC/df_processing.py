@@ -54,9 +54,9 @@ def process_dataframes(flexural_df, shear_df, span_df):
     span_df = span_df.reset_index(drop=True)
 
     # Slice through the flexural df and get the story identifier.
-    stories = flexural_df["TABLE:  Concrete Beam Flexure Envelope - ACI 318-19"].iloc[
-        ::3
-    ]
+    stories = flexural_df[
+        "TABLE:  Concrete Beam Flexure Envelope - ACI 318-19"
+    ].iloc[::3]
 
     # Slice through the flexural df and get the etabs id.
     e_ids = flexural_df["Unnamed: 1"].iloc[::3]
@@ -93,7 +93,8 @@ def process_dataframes(flexural_df, shear_df, span_df):
         nested_pos_combo_list = [
             "O/S"
             if any(
-                str(element).strip().lower() in ["o/s", "nan"] for element in sublist
+                str(element).strip().lower() in ["o/s", "nan"]
+                for element in sublist
             )
             else "OK"
             for sublist in nested_pos_combo_list
@@ -101,7 +102,8 @@ def process_dataframes(flexural_df, shear_df, span_df):
         nested_neg_combo_list = [
             "O/S"
             if any(
-                str(element).strip().lower() in ["o/s", "nan"] for element in sublist
+                str(element).strip().lower() in ["o/s", "nan"]
+                for element in sublist
             )
             else "OK"
             for sublist in nested_neg_combo_list
@@ -123,7 +125,9 @@ def process_dataframes(flexural_df, shear_df, span_df):
         # Check if any of the beams are overstressed. If they are, the values get replaced with O/S.
         top_flex_reinf_needed = [
             [
-                "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
+                "O/S"
+                if str(element).strip().lower() in ["o/s", "nan"]
+                else element
                 for element in sublist
             ]
             for sublist in top_flex_reinf_needed
@@ -137,7 +141,9 @@ def process_dataframes(flexural_df, shear_df, span_df):
         ]
         bot_flex_reinf_needed = [
             [
-                "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
+                "O/S"
+                if str(element).strip().lower() in ["o/s", "nan"]
+                else element
                 for element in sublist
             ]
             for sublist in bot_flex_reinf_needed
@@ -154,7 +160,9 @@ def process_dataframes(flexural_df, shear_df, span_df):
         # Check if any of the beams are overstressed in torsion. If they are, values get replaced with O/S.
         flex_torsion_reinf_needed = [
             [
-                "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
+                "O/S"
+                if str(element).strip().lower() in ["o/s", "nan"]
+                else element
                 for element in sublist
             ]
             for sublist in flex_torsion_reinf_needed
@@ -163,20 +171,23 @@ def process_dataframes(flexural_df, shear_df, span_df):
         # Take each beams shear force (kN) and put it in a nested list.
         shear_force_list = shear_df["Unnamed: 6"].tolist()
         nested_shear_force = [
-            shear_force_list[i : i + 3] for i in range(0, len(shear_force_list), 3)
+            shear_force_list[i : i + 3]
+            for i in range(0, len(shear_force_list), 3)
         ]
 
         # Take each beam's shear combo and put it in a nested list.
         shear_combo_list = shear_df["Unnamed: 5"].tolist()
         nested_shear_combo = [
-            shear_combo_list[i : i + 3] for i in range(0, len(shear_combo_list), 3)
+            shear_combo_list[i : i + 3]
+            for i in range(0, len(shear_combo_list), 3)
         ]
 
         # Take the nested list and return OK or OS as a string in a list.
         nested_shear_combo = [
             "O/S"
             if any(
-                str(element).strip().lower() in ["o/s", "nan"] for element in sublist
+                str(element).strip().lower() in ["o/s", "nan"]
+                for element in sublist
             )
             else "OK"
             for sublist in nested_shear_combo
@@ -188,13 +199,15 @@ def process_dataframes(flexural_df, shear_df, span_df):
         # Repeat the same as shear combo, except for torsion combo.
         torsion_combo_list = shear_df["Unnamed: 9"].tolist()
         nested_torsion_combo = [
-            torsion_combo_list[i : i + 3] for i in range(0, len(torsion_combo_list), 3)
+            torsion_combo_list[i : i + 3]
+            for i in range(0, len(torsion_combo_list), 3)
         ]
 
         nested_torsion_combo = [
             "O/S"
             if any(
-                str(element).strip().lower() in ["o/s", "nan"] for element in sublist
+                str(element).strip().lower() in ["o/s", "nan"]
+                for element in sublist
             )
             else "OK"
             for sublist in nested_torsion_combo
@@ -206,13 +219,16 @@ def process_dataframes(flexural_df, shear_df, span_df):
         # Index 0 is left, Index 1 is middle, and Index 2 is right.
         shear_reinf_needed = shear_df["Unnamed: 8"].tolist()
         shear_reinf_needed = [
-            shear_reinf_needed[i : i + 3] for i in range(0, len(shear_reinf_needed), 3)
+            shear_reinf_needed[i : i + 3]
+            for i in range(0, len(shear_reinf_needed), 3)
         ]
 
         # Check if any of the beams are overstressed in shear. If they are, values get replaced with O/S.
         shear_reinf_needed = [
             [
-                "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
+                "O/S"
+                if str(element).strip().lower() in ["o/s", "nan"]
+                else element
                 for element in sublist
             ]
             for sublist in shear_reinf_needed
@@ -226,7 +242,9 @@ def process_dataframes(flexural_df, shear_df, span_df):
         ]
         torsion_reinf_needed = [
             [
-                "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
+                "O/S"
+                if str(element).strip().lower() in ["o/s", "nan"]
+                else element
                 for element in sublist
             ]
             for sublist in torsion_reinf_needed
@@ -407,12 +425,21 @@ def process_dataframes(flexural_df, shear_df, span_df):
             "depth": ("Dimensions", "Depth (mm)"),
             "span": ("Span (mm)", ""),
             "flex_bot_left_rebar_string": ("Bottom Reinforcement", "Left (BL)"),
-            "flex_bot_middle_rebar_string": ("Bottom Reinforcement", "Middle (B)"),
-            "flex_bot_right_rebar_string": ("Bottom Reinforcement", "Right (BR)"),
+            "flex_bot_middle_rebar_string": (
+                "Bottom Reinforcement",
+                "Middle (B)",
+            ),
+            "flex_bot_right_rebar_string": (
+                "Bottom Reinforcement",
+                "Right (BR)",
+            ),
             "flex_top_left_rebar_string": ("Top Reinforcement", "Left (TL)"),
             "flex_top_middle_rebar_string": ("Top Reinforcement", "Middle (T)"),
             "flex_top_right_rebar_string": ("Top Reinforcement", "Right (TR)"),
-            "selected_side_face_reinforcement_string": ("Side Face Reinforcement", ""),
+            "selected_side_face_reinforcement_string": (
+                "Side Face Reinforcement",
+                "",
+            ),
             "shear_left_string": ("Shear links", "Left (H)"),
             "shear_middle_string": ("Shear links", "Middle (J)"),
             "shear_right_string": ("Shear links", "Right (K)"),

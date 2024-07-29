@@ -1,7 +1,6 @@
+import beam
+import beam_design
 import pandas as pd
-import Beam
-import BeamDesign
-
 
 excel_file = r"assets\run_2.xlsx"
 
@@ -18,16 +17,22 @@ stories = span_df["Story"].tolist()
 # Slice through the flexural df and get the etabs id.
 etabs_ids = span_df["Label"].tolist()
 
-# Slice through the flexural df and get the cleaned width, depth, and concrete comp strength.
+# Slice through the flexural df and get the cleaned width, depth, and concrete
+# compressive strength.
 dimension_error_check = False
 try:
-    beam_widths = [Beam.get_width(sections) for sections in flexural_df["Section"][::3]]
-    beam_depths = [Beam.get_depth(sections) for sections in flexural_df["Section"][::3]]
+    beam_widths = [
+        beam.get_width(sections) for sections in flexural_df["Section"][::3]
+    ]
+    beam_depths = [
+        beam.get_depth(sections) for sections in flexural_df["Section"][::3]
+    ]
     concrete_grade = [
-        Beam.get_comp_conc_grade(sections) for sections in flexural_df["Section"][::3]
+        beam.get_comp_conc_grade(sections)
+        for sections in flexural_df["Section"][::3]
     ]
 except ValueError:
-    # True means section definitions have not been titled correctly as per requirements.
+    # True means section definitions have not been titled correctly.
     dimension_error_check = True
 
 if dimension_error_check is False:
@@ -44,22 +49,30 @@ if dimension_error_check is False:
     nested_neg_combo_list = [
         neg_combo_list[i : i + 3] for i in range(0, len(neg_combo_list), 3)
     ]
-    # Take the nested lists and return True if any of the combos are overstressed.
+    # Return True if any of the combos in the list are overstressed.
     checked_pos_combo_list = [
-        True
-        if any(str(element).strip().lower() in ["o/s", "nan"] for element in sublist)
-        else False
+        bool(
+            any(
+                str(element).strip().lower() in ["o/s", "nan"]
+                for element in sublist
+            )
+        )
         for sublist in nested_pos_combo_list
     ]
     checked_neg_combo_list = [
-        True
-        if any(str(element).strip().lower() in ["o/s", "nan"] for element in sublist)
-        else False
+        bool(
+            any(
+                str(element).strip().lower() in ["o/s", "nan"]
+                for element in sublist
+            )
+        )
         for sublist in nested_neg_combo_list
     ]
-    # Zip the positive and negative combos together. Index 0 is positive, Index 1 is negative.
+    # Zip the positive and negative combos together. Index 0 is positive and
+    # Index 1 is negative.
     flexural_combo = [
-        [pos, neg] for pos, neg in zip(checked_pos_combo_list, checked_neg_combo_list)
+        [pos, neg]
+        for pos, neg in zip(checked_pos_combo_list, checked_neg_combo_list)
     ]
     # Take the required top flexural reinforcement and put it in a nested list.
     # Index 0 is left, Index 1 is middle, and Index 2 is right.
@@ -68,7 +81,8 @@ if dimension_error_check is False:
         top_flex_reinf_needed[i : i + 3]
         for i in range(0, len(top_flex_reinf_needed), 3)
     ]
-    # Check if any of the beams are overstressed. If they are, the values get replaced with O/S.
+    # Check if any beams are overstressed in flexure.
+    # If they are, their values are O/S.
     top_flex_reinf_needed = [
         [
             "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
@@ -96,7 +110,8 @@ if dimension_error_check is False:
         flex_torsion_reinf_needed[i : i + 3]
         for i in range(0, len(flex_torsion_reinf_needed), 3)
     ]
-    # Check if any of the beams are overstressed in torsion. If they are, values get replaced with O/S.
+    # Check if any beams are overstressed in torsion.
+    # If they are, their values are O/S.
     flex_torsion_reinf_needed = [
         [
             "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
@@ -116,20 +131,27 @@ if dimension_error_check is False:
     ]
     # Take the nested list and return OK or OS as a string in a list.
     checked_shear_combo = [
-        True
-        if any(str(element).strip().lower() in ["o/s", "nan"] for element in sublist)
-        else False
+        bool(
+            any(
+                str(element).strip().lower() in ["o/s", "nan"]
+                for element in sublist
+            )
+        )
         for sublist in nested_shear_combo
     ]
     # Repeat the same as shear combo, except for torsion combo.
     torsion_combo_list = shear_df["TTrnCombo"].tolist()
     nested_torsion_combo = [
-        torsion_combo_list[i : i + 3] for i in range(0, len(torsion_combo_list), 3)
+        torsion_combo_list[i : i + 3]
+        for i in range(0, len(torsion_combo_list), 3)
     ]
     checked_torsion_combo = [
-        True
-        if any(str(element).strip().lower() in ["o/s", "nan"] for element in sublist)
-        else False
+        bool(
+            any(
+                str(element).strip().lower() in ["o/s", "nan"]
+                for element in sublist
+            )
+        )
         for sublist in nested_torsion_combo
     ]
     shear_combo = [
@@ -140,9 +162,11 @@ if dimension_error_check is False:
     # Index 0 is left, Index 1 is middle, and Index 2 is right.
     shear_reinf_needed = shear_df["VRebar (Av/s)"].tolist()
     shear_reinf_needed = [
-        shear_reinf_needed[i : i + 3] for i in range(0, len(shear_reinf_needed), 3)
+        shear_reinf_needed[i : i + 3]
+        for i in range(0, len(shear_reinf_needed), 3)
     ]
-    # Check if any of the beams are overstressed in shear. If they are, values get replaced with O/S.
+    # Check if beams are overstressed in shear.
+    # If they are, their values are O/S.
     shear_reinf_needed = [
         [
             "O/S" if str(element).strip().lower() in ["o/s", "nan"] else element
@@ -150,10 +174,11 @@ if dimension_error_check is False:
         ]
         for sublist in shear_reinf_needed
     ]
-    # Repeat the same as required shear reinforcement but for required torsion reinforcement.
+    # Repeat for required tension reinforcement.
     torsion_reinf_needed = shear_df["TTrnRebar (At/s)"].tolist()
     torsion_reinf_needed = [
-        torsion_reinf_needed[i : i + 3] for i in range(0, len(torsion_reinf_needed), 3)
+        torsion_reinf_needed[i : i + 3]
+        for i in range(0, len(torsion_reinf_needed), 3)
     ]
     torsion_reinf_needed = [
         [
@@ -165,7 +190,7 @@ if dimension_error_check is False:
 
     # Create beam_instances list and store all the Beam objects.
     beam_instances = [
-        Beam.Beam(
+        beam.Beam(
             stories,
             etabs_id,
             width,
@@ -202,13 +227,13 @@ if dimension_error_check is False:
     # Begin with for loop and create attributes for each beam instance to undertake calculations.
     for beam in beam_instances:
         # Instantiate the Beam Design object.
-        beam_design = BeamDesign.BeamDesign(beam)
+        beam_design_instance = beam_design.BeamDesign(beam)
         # Undertake the process of flexural design.
-        beam_design.calculate_flexural_design()
+        beam_design_instance.calculate_flexural_design()
         # Undertake the process of shear design.
-        beam_design.calculate_shear_design()
+        beam_design_instance.calculate_shear_design()
         # Append all the designed beams to the designed beams list.
-        designed_beams.append(beam_design)
+        designed_beams.append(beam_design_instance)
         # # Calculate the total required shear reinforcement including shear and torsion.
         # beam.get_total_shear_req()
 
@@ -230,6 +255,7 @@ if dimension_error_check is False:
         # # Grab the index of the side face reinforcement with the highest area.
         # beam.get_index_for_side_face_reinf()
 
-print(designed_beams[0].beam)
-print(designed_beams[0].flexural_design)
-print(designed_beams[8].shear_design.shear_spacing)
+print(designed_beams[0].shear_design)
+# print(designed_beams[8].flexural_design)
+# print(designed_beams[8].shear_design.shear_spacing)
+# print(designed_beams[8].shear_design.shear_center_spacing)

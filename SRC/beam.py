@@ -1,12 +1,15 @@
-import numpy as np
+"""Holds the beam dataclass and additional functions."""
+# TODO: update the module docstring.
+
 from dataclasses import dataclass, field
 from typing import List
-# TODO: fix imports to be inline with google style guide
+
+import numpy as np
 
 
 @dataclass
 class Beam:
-    """This data class encapsulates the necessary attributes to return a solved beam reinforcement object."""
+    """Holds and encapsulates attributes of a beam object."""
 
     storey: str = "No storey provided."
     etabs_id: str = "No ETABS ID."
@@ -15,31 +18,46 @@ class Beam:
     span: int = 0  # in mm
     comp_conc_grade: int = 0  # in MPa (n/mm^2)
     # * Index 0 of this list is positive flexure, index 1 is negative flexure.
-    flex_overstressed: List[bool] = field(default_factory=lambda: [False, False])
-    req_top_flex_reinf: List[int] = field(default_factory=lambda: [0, 0, 0])  # in mm^2
-    req_bot_flex_reinf: List[int] = field(default_factory=lambda: [0, 0, 0])  # in mm^2
+    flex_overstressed: List[bool] = field(
+        default_factory=lambda: [False, False]
+    )
+    req_top_flex_reinf: List[int] = field(
+        default_factory=lambda: [0, 0, 0]
+    )  # in mm^2
+    req_bot_flex_reinf: List[int] = field(
+        default_factory=lambda: [0, 0, 0]
+    )  # in mm^2
     req_torsion_flex_reinf: List[int] = field(
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
     shear_force: List[int] = field(default_factory=lambda: [0, 0, 0])  # in kN
     # * Index 0 of this list is shear, index 1 is torsion.
-    shear_overstressed: List[bool] = field(default_factory=lambda: [False, False])
-    req_shear_reinf: List[int] = field(default_factory=lambda: [0, 0, 0])  # in mm^2
-    req_torsion_reinf: List[int] = field(default_factory=lambda: [0, 0, 0])  # in mm^2
+    shear_overstressed: List[bool] = field(
+        default_factory=lambda: [False, False]
+    )
+    req_shear_reinf: List[int] = field(
+        default_factory=lambda: [0, 0, 0]
+    )  # in mm^2
+    req_torsion_reinf: List[int] = field(
+        default_factory=lambda: [0, 0, 0]
+    )  # in mm^2
     eff_depth: int = field(init=False)  # in mm
 
     def __post_init__(self):
+        """Initialises effective depth once the depth attribute is provided."""
         self.eff_depth = 0.8 * self.depth
 
 
-def get_width(width: str) -> int:
-    """This function cleans and retrieves the width of the beam.
+def get_width(section: str) -> int:
+    """Clean and retrieve the width of the beam.
+
     Args:
-        width (str): Width in column of dataframe.
+        section (str): Section of beam as defined in ETABS.
+
     Returns:
         int: Width of beam.
     """
-    width_list = list(width)
+    width_list = list(section)
     width_list = [el.lower() for el in width_list]
     excluded_values = ["p", "t", "b", "-", "_", "c", "/", "s", "w"]
     cleaned_width_list = [ex for ex in width_list if ex not in excluded_values]
@@ -49,16 +67,16 @@ def get_width(width: str) -> int:
     return int(true_width)
 
 
-def get_depth(depth: str) -> int:
-    """This function cleans and retrieves the depth of the beam.
+def get_depth(section: str) -> int:
+    """Clean and retrieve the depth of the beam.
 
     Args:
-        depth (str): Depth in column of dataframe.
+        section (str): Section of beam as defined in ETABS.
 
     Returns:
         int: Depth of beam.
     """
-    depth_list = list(depth)
+    depth_list = list(section)
     depth_list = [el.lower() for el in depth_list]
     excluded_values = ["p", "t", "b", "-", "_", "c", "/", "s", "w"]
     cleaned_depth_list = [ex for ex in depth_list if ex not in excluded_values]
@@ -68,19 +86,21 @@ def get_depth(depth: str) -> int:
     return int(true_depth)
 
 
-def get_comp_conc_grade(comp_conc_grade: str) -> int:
-    """This function cleans and retrieves the cylinderical concrete compressive strength, fc'.
+def get_comp_conc_grade(section: str) -> int:
+    """Clean and retrieve the cylinderical concrete compressive strength, fc'.
 
     Args:
-        comp_conc_grade (str): the section string to clean and get the compressive strength of the beam from.
+        section (str): Section of beam as defined in ETABS.
 
     Returns:
-        int: the cylincderial concrete compressive strength, fc'.
+        int: The cylincderial concrete compressive strength, fc'.
     """
-    section_list = list(comp_conc_grade)
+    section_list = list(section)
     section_list = [el.lower() for el in section_list]
     excluded_values = ["p", "t", "b", "-", "_", "x", "s", "w"]
-    excluded_section_list = [ex for ex in section_list if ex not in excluded_values]
+    excluded_section_list = [
+        ex for ex in section_list if ex not in excluded_values
+    ]
     index_c = excluded_section_list.index("c")
     index_slash = excluded_section_list.index("/")
     retrieved_value = excluded_section_list[1 + index_c : index_slash]
