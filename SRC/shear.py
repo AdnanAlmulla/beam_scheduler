@@ -1,6 +1,7 @@
 """Holds the shear class."""
 # TODO: update the module docstring.
 
+import itertools
 from typing import List
 
 import beam
@@ -138,10 +139,10 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
         left/right and middle shear links.
         """
         # ! By writing this conditional, an overstressed condition in top or
-        # ! bottom reinforcement will not solve for shear reinforcement.
-        if True not in (
-            self.beam.flex_overstressed,
-            self.beam.shear_overstressed,
+        # ! bottom flex reinforcement will not solve for shear reinforcement.
+        if not (
+            any(self.beam.flex_overstressed)
+            or any(self.beam.shear_overstressed)
         ):
 
             def get_min_diameter(rebar_dict: dict) -> int:
@@ -192,3 +193,104 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
             self.shear_center_spacing = list(set(self.shear_center_spacing))
             self.shear_spacing.sort(reverse=True)
             self.shear_center_spacing.sort(reverse=True)
+
+    def get_shear_links(self) -> None:
+        """Solve for the shear rebar.
+
+        Takes the shear object and modifies the shear links attributes to
+        signify whether the object has been solved or not. Utilises
+        find_rebar_configuration private method to find the optimal rebar
+        configuration.
+        """
+        locations = ["left", "middle", "right"]
+        # Flex overstressed is checked as minimum shear spacing is not solved.
+        if not (
+            any(self.beam.flex_overstressed)
+            or any(self.beam.shear_overstressed)
+        ):
+            for location, requirement, torsion_requirement in zip(
+                locations, self.total_req_shear, self.beam.req_torsion_reinf
+            ):
+                # Solve for left and right shear spacings.
+                if location == "left" or location == "right":
+                    result = self._find_links_configuration(
+                        requirement, torsion_requirement, self.shear_spacing
+                    )
+                    self.shear_links[location] = {
+                        "links_text": result["links_text"],
+                        "provided_reinf": result["provided_reinf"],
+                        "diameter": result["diameter"],
+                        "spacing": result["spacing"],
+                        "solved": result["solved"],
+                    }
+                else:
+                    result = self._find_links_configuration(
+                        requirement,
+                        torsion_requirement,
+                        self.shear_center_spacing,
+                    )
+                    self.shear_links[location] = {
+                        "links_text": result["links_text"],
+                        "provided_reinf": result["provided_reinf"],
+                        "diameter": result["diameter"],
+                        "spacing": result["spacing"],
+                        "solved": result["solved"],
+                    }
+        else:
+            for location in self.shear_links:
+                self.shear_links[location]["links_text"] = "Overstressed"
+
+    def _find_links_configuration(
+        self, requirement: int, torsion_requirement: int, spacing: list
+    ) -> dict:
+        """Find the optimal links configuration for the required rebar area.
+
+        Args:
+            requirement (int): The required rebar area (mm^2)
+            torsion_requirement(int): The required torsion rebar area (mm^2)
+            spacing(list): The required spacing list.
+
+        Returns:
+            dict: Returns the link text, provided reinforcement area, diameter
+            of each layer, and whether the beam object was solved or not.
+        """
+        best_combination = None
+        min_excess_area = float("inf")
+        # Consider all combinations of diameter, spacing, and count.
+        all_combinations = list(
+            itertools.product(self.shear_dia, self.shear_links_count, spacing)
+        )
+        for diameter, count, spacing in all_combinations:
+            provided = (
+                beam.provided_reinforcement(diameter) * count * (1000 / spacing)
+            )
+            # torsion_provided checks that the outer two layers is
+            # satisfactory against torsional shear requirements.
+            torsion_provided = (
+                beam.provided_reinforcement(diameter) * 2 * (1000 / spacing)
+            )
+            if (
+                provided >= requirement
+                and torsion_provided >= torsion_requirement
+            ):
+                excess_area = provided - requirement
+                if excess_area < min_excess_area:
+                    min_excess_area = excess_area
+                    best_combination = {
+                        "links_text": f"{count}L-T{diameter}@{spacing}",
+                        "provided_reinf": round(provided),
+                        "diameter": diameter,
+                        "spacing": spacing,
+                        "solved": True,
+                    }
+        if best_combination:
+            return best_combination
+        else:
+            best_combination = {
+                "links_text": "Cannot satisfy requirement. Please reassess",
+                "provided_reinf": 0,
+                "diameter": 0,
+                "spacing": 0,
+                "solved": False,
+            }
+            return best_combination

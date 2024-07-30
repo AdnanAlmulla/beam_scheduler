@@ -59,3 +59,5 @@ class BeamDesign:
         self.shear_design.get_total_shear_req()
         # Get the minimum codal longitudinal shear spacing.
         self.shear_design.get_min_shear_spacing()
+        # Obtain the shear links reinforcement.
+        self.shear_design.get_shear_links()

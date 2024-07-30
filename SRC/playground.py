@@ -272,7 +272,5 @@ if dimension_error_check is False:
         # # Grab the index of the side face reinforcement with the highest area.
         # beam.get_index_for_side_face_reinf()
 
-print(designed_beams[4].flexural_design)
-print(designed_beams[4].beam.depth)
-print(designed_beams[4].shear_design.shear_spacing)
-print(designed_beams[4].shear_design.shear_center_spacing)
+print(designed_beams[7].beam)
+print(designed_beams[7].shear_design)

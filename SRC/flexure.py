@@ -1,7 +1,7 @@
 """Holds the flexure class."""
 # TODO: update the module docstring.
 
-from itertools import product
+import itertools
 from typing import List
 
 import beam
@@ -123,15 +123,13 @@ Residual flexural rebar: {self.residual_rebar}"""
             if self.beam.flex_overstressed[1] is True:
                 self.top_flex_rebar[location]["rebar_text"] = "Overstressed"
             else:
-                result = self.__find_rebar_configuration(requirement)
-                self.top_flex_rebar[location]["rebar_text"] = result[
-                    "rebar_text"
-                ]
-                self.top_flex_rebar[location]["provided_reinf"] = result[
-                    "provided_reinf"
-                ]
-                self.top_flex_rebar[location]["diameter"] = result["diameter"]
-                self.top_flex_rebar[location]["solved"] = result["solved"]
+                result = self._find_rebar_configuration(requirement)
+                self.top_flex_rebar[location] = {
+                    "rebar_text": result["rebar_text"],
+                    "provided_reinf": result["provided_reinf"],
+                    "diameter": result["diameter"],
+                    "solved": result["solved"],
+                }
 
         # Loop and obtain the bottom flexural rebar:
         for location, requirement in zip(
@@ -141,17 +139,15 @@ Residual flexural rebar: {self.residual_rebar}"""
             if self.beam.flex_overstressed[0] is True:
                 self.bot_flex_rebar[location]["rebar_text"] = "Overstressed"
             else:
-                result = self.__find_rebar_configuration(requirement)
-                self.bot_flex_rebar[location]["rebar_text"] = result[
-                    "rebar_text"
-                ]
-                self.bot_flex_rebar[location]["provided_reinf"] = result[
-                    "provided_reinf"
-                ]
-                self.bot_flex_rebar[location]["diameter"] = result["diameter"]
-                self.bot_flex_rebar[location]["solved"] = result["solved"]
+                result = self._find_rebar_configuration(requirement)
+                self.bot_flex_rebar[location] = {
+                    "rebar_text": result["rebar_text"],
+                    "provided_reinf": result["provided_reinf"],
+                    "diameter": result["diameter"],
+                    "solved": result["solved"],
+                }
 
-    def __find_rebar_configuration(self, requirement: int) -> dict:
+    def _find_rebar_configuration(self, requirement: int) -> dict:
         """Find the optimal rebar configuration for the required rebar area.
 
         Args:
@@ -166,7 +162,7 @@ Residual flexural rebar: {self.residual_rebar}"""
         # Consider all combinations of one and two layers
         all_combinations = [
             (diameter,) for diameter in self.flex_rebar_dia
-        ] + list(product(self.flex_rebar_dia, repeat=2))
+        ] + list(itertools.product(self.flex_rebar_dia, repeat=2))
         for combination in all_combinations:
             provided = sum(
                 beam.provided_reinforcement(diameter) * self.flex_rebar_count
