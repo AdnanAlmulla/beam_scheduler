@@ -1,4 +1,4 @@
-select = [
+lint.select = [
     # pydocstyle
     "D",
     # pycodestyle
@@ -13,8 +13,10 @@ select = [
     "SIM",
     # isort
     "I",
+    # flake8-annotations
+    "ANN",
 ]
-ignore = ["TD003"]
+lint.ignore = ["TD003", "ANN101"]
 exclude = [
     ".bzr",
     ".direnv",
@@ -45,10 +47,6 @@ exclude = [
 ]
 line-length = 80
 indent-width = 4
-
-[format]
-docstring-code-format = false
-docstring-code-line-length = 80
 
 [lint.pydocstyle]
 convention = "google"

@@ -1,10 +1,11 @@
-import pandas as pd
-import beamscheduler_gui as gui
-from nicegui import ui, events
+import asyncio
 import io
 import tempfile
+
+import beamscheduler_gui as gui
 import df_processing as pr
-import asyncio
+import pandas as pd
+from nicegui import events, ui
 
 # Global variable to store the processed DataFrame
 processed_beam_schedule_df = None
@@ -60,7 +61,10 @@ async def process_content(e: events.UploadEventArguments, container):
         )
         with container:
             if isinstance(processed_beam_schedule_df, str):
-                if processed_beam_schedule_df == "Incorrect section definitions":
+                if (
+                    processed_beam_schedule_df
+                    == "Incorrect section definitions"
+                ):
                     ui.notify(
                         "The section definitions as exported in the spreadsheet do not abide with the syntax required. Please update and try again.",
                         type="negative",
@@ -94,7 +98,9 @@ def add_down_button():
     with ui.grid(columns=3).classes("w-full no-wrap mt-5"):
         with ui.row().classes("pt-8 pb-6 pr-6 pl-10 justify-start items-start"):
             pass
-        with ui.row().classes("pt-6 pb-6 pr-6 pl-6 justify-center items-center"):
+        with ui.row().classes(
+            "pt-6 pb-6 pr-6 pl-6 justify-center items-center"
+        ):
             ui.button(
                 "download beam schedule",
                 on_click=download_handler,
@@ -114,7 +120,9 @@ def export_file(beam_schedule_df):
     # Create an Excel writer object with the BytesIO object
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
         # Write the entire DataFrame to the first sheet
-        beam_schedule_df.to_excel(writer, sheet_name="Beam Reinforcement Schedule")
+        beam_schedule_df.to_excel(
+            writer, sheet_name="Beam Reinforcement Schedule"
+        )
 
         # Group by the 'Storey' column
         grouped = beam_schedule_df.groupby("Storey", sort=False)

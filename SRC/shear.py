@@ -1,6 +1,7 @@
-from typing import (
-    List,
-)
+"""Holds the shear class."""
+# TODO: update the module docstring.
+
+from typing import List
 
 import beam
 import flexure
@@ -8,44 +9,22 @@ import numpy as np
 
 
 class Shear:
-    """This class inherits Beam objects and provides new attributes relating to shear design."""
+    # TODO: provide further information to class docstring.
+    """Holds and encapsulates attributes of a shear object."""
 
-    def __init__(
-        self,
-        beam: beam,
-        flexure: flexure,
-    ) -> None:
-        """_summary_
+    def __init__(self, beam: beam, flexure: flexure) -> None:
+        """Initialises shear object and inherits the beam and flexure objects.
 
         Args:
-            beam (beam): _description_
-            flexure (flexure): _description_
+            beam (beam): Beam dataclass object.
+            flexure (flexure): Flexure object.
         """
         self.beam = beam
         self.flexure = flexure
-        self.total_req_shear: List[int] = [
-            0,
-            0,
-            0,
-        ]
-        self.shear_dia: List[int] = [
-            12,
-            16,
-        ]
-        self.shear_spacing: List[int] = [
-            250,
-            200,
-            150,
-            125,
-            100,
-        ]
-        self.shear_center_spacing: List[int] = [
-            250,
-            200,
-            150,
-            125,
-            100,
-        ]
+        self.total_req_shear: List[int] = [0, 0, 0]
+        self.shear_dia: List[int] = [12, 16]
+        self.shear_spacing: List[int] = [250, 200, 150, 125, 100]
+        self.shear_center_spacing: List[int] = [250, 200, 150, 125, 100]
         self.shear_links_count: list = []
         self.shear_links: dict = {
             "left": {
@@ -72,60 +51,36 @@ class Shear:
         }
         self.check_transverse_shear_spacing: bool = False
 
-    def __repr__(
-        self,
-    ) -> str:
-        """Return a string representation of the shear object.
+    def __repr__(self) -> str:
+        """String representation of shear object.
 
-        Returns
-        -------
-            str: String object.
-
+        Returns:
+            str: Shear object string.
         """
-        return f"""Shear links count: {self.shear_links_count}, 
-        \nTotal required shear reinforcement: {self.total_req_shear},
-        Shear links: {self.shear_links}, 
-        \n Check transverse shear spacing: 
-        {self.check_transverse_shear_spacing}"""
+        return f"""Total required shear reinforcement: {self.total_req_shear},
+Shear links: {self.shear_links}, 
+Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
 
-    def get_shear_links_count(
-        self,
-    ) -> None:
+    def get_shear_links_count(self) -> None:
         """Calculate the required shear legs.
 
         Calculate the required shear legs based on the maximum
         stransverse shear spacing as required in Table 9.7.6.2.2. of ACI 318-19.
         """
         if True not in self.beam.shear_overstressed:
-            max_transverse_spacing = min(
-                self.beam.eff_depth,
-                600,
-            )
+            max_transverse_spacing = min(self.beam.eff_depth, 600)
             req_legs = (self.beam.width - 80) / max_transverse_spacing
             if req_legs < 2:
                 if self.flexure.flex_rebar_count == 2:
                     self.shear_links_count.append(2)
                 elif self.flexure.flex_rebar_count == 3:
-                    self.shear_links_count = self.shear_links_count + [
-                        2,
-                        3,
-                    ]
+                    self.shear_links_count = self.shear_links_count + [2, 3]
                 else:
-                    self.shear_links_count = self.shear_links_count + [
-                        2,
-                        3,
-                        4,
-                    ]
+                    self.shear_links_count = self.shear_links_count + [2, 3, 4]
             else:
-                self.shear_links_count = self.shear_links_count + [
-                    2,
-                    3,
-                    4,
-                ]
+                self.shear_links_count = self.shear_links_count + [2, 3, 4]
 
-    def assess_transverse_shear_spacing(
-        self,
-    ):
+    def assess_transverse_shear_spacing(self) -> None:
         """Assess whether the transverse shear spacing requires to be checked.
 
         This method assesses if the required Vs is greater or less than the
@@ -158,9 +113,7 @@ class Shear:
         else:
             self.check_transverse_shear_spacing = True
 
-    def get_total_shear_req(
-        self,
-    ) -> None:
+    def get_total_shear_req(self) -> None:
         """Calculate the total required shear area.
 
         Call the required shear and torsion reinforcement attributes and
@@ -173,24 +126,25 @@ class Shear:
             self.total_req_shear = [
                 round(a + 2 * b)
                 for a, b in zip(
-                    self.beam.req_shear_reinf,
-                    self.beam.req_torsion_reinf,
+                    self.beam.req_shear_reinf, self.beam.req_torsion_reinf
                 )
             ]
 
-    def get_min_shear_spacing(
-        self,
-    ) -> None:
-        """This method follows Clause 18.4.2.4 of ACI 318-19 by ensuring that the longitudinal spacing of shear links does not exceed its codal maximum."""
-        # ! By writing this conditional, an overstressed condition in top or bottom reinforcement will not solve for shear reinforcement.
+    def get_min_shear_spacing(self) -> None:
+        """Derive the minimum codal longitudinal shear spacing.
+
+        This method follows Clause 18.4.2.4 of ACI 318-19 by ensuring that the
+        longitudinal spacing does not exceed its codal maximum for the
+        left/right and middle shear links.
+        """
+        # ! By writing this conditional, an overstressed condition in top or
+        # ! bottom reinforcement will not solve for shear reinforcement.
         if True not in (
             self.beam.flex_overstressed,
             self.beam.shear_overstressed,
         ):
 
-            def get_min_diameter(
-                rebar_dict,
-            ):
+            def get_min_diameter(rebar_dict: dict) -> int:
                 return min(
                     min(
                         properties["diameter"]
@@ -202,8 +156,7 @@ class Shear:
                 get_min_diameter(self.flexure.top_flex_rebar),
                 get_min_diameter(self.flexure.bot_flex_rebar),
             )
-            # Assume the worst case diameter for shear as its not been derived
-            # yet.
+            # Assume worst case diameter for shear as it's not been derived yet.
             smallest_shear_dia = 12
             min_shear_spacing = min(
                 [
@@ -213,44 +166,16 @@ class Shear:
                     250,
                 ]
             )
-            min_shear_center_spacing = min(
-                [
-                    (self.beam.eff_depth / 2),
-                    250,
-                ]
-            )
+            min_shear_center_spacing = min([(self.beam.eff_depth / 2), 250])
             spacing_thresholds = [
-                (
-                    200,
-                    250,
-                    200,
-                ),
-                (
-                    150,
-                    200,
-                    150,
-                ),
-                (
-                    125,
-                    150,
-                    125,
-                ),
-                (
-                    100,
-                    125,
-                    100,
-                ),
+                (200, 250, 200),
+                (150, 200, 150),
+                (125, 150, 125),
+                (100, 125, 100),
             ]
 
-            def update_spacing(
-                spacing_list,
-                min_spacing,
-            ):
-                for (
-                    lower,
-                    upper,
-                    value,
-                ) in spacing_thresholds:
+            def update_spacing(spacing_list: list, min_spacing: int) -> list:
+                for lower, upper, value in spacing_thresholds:
                     if lower <= min_spacing < upper:
                         spacing_list.append(value)
                         return [s for s in spacing_list if s <= value]
@@ -258,12 +183,12 @@ class Shear:
                 return [s for s in spacing_list if s <= min_spacing]
 
             self.shear_spacing = update_spacing(
-                self.shear_spacing,
-                min_shear_spacing,
+                self.shear_spacing, min_shear_spacing
             )
             self.shear_center_spacing = update_spacing(
-                self.shear_center_spacing,
-                min_shear_center_spacing,
+                self.shear_center_spacing, min_shear_center_spacing
             )
+            self.shear_spacing = list(set(self.shear_spacing))
+            self.shear_center_spacing = list(set(self.shear_center_spacing))
             self.shear_spacing.sort(reverse=True)
             self.shear_center_spacing.sort(reverse=True)

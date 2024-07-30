@@ -9,6 +9,7 @@ import numpy as np
 
 @dataclass
 class Beam:
+    # TODO: provide further information to class docstring.
     """Holds and encapsulates attributes of a beam object."""
 
     storey: str = "No storey provided."
@@ -43,7 +44,7 @@ class Beam:
     )  # in mm^2
     eff_depth: int = field(init=False)  # in mm
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialises effective depth once the depth attribute is provided."""
         self.eff_depth = 0.8 * self.depth
 

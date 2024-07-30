@@ -15,8 +15,12 @@ def start_popup():
     to run properly."""
     with ui.dialog() as dialog, ui.card().classes("w-fit"):
         app.on_startup(dialog)
-        ui.label("Beam Scheduler v1.0").classes("self-center font-bold text-4xl -my-2")
-        ui.label("Made by Adnan Almulla @ Killa Design").classes("self-center text-2xl")
+        ui.label("Beam Scheduler v1.0").classes(
+            "self-center font-bold text-4xl -my-2"
+        )
+        ui.label("Made by Adnan Almulla @ Killa Design").classes(
+            "self-center text-2xl"
+        )
         ui.label(
             "To utilise this script appropriately, please consider and abide by the following:"
         ).classes("text-lg text-red-500 flex-nowrap")
@@ -50,8 +54,12 @@ async def question_popup():
     """This function mimics start-popup, except it does not come up on start and only comes up when the question
     button is clicked"""
     with ui.dialog() as dialog, ui.card().classes("w-fit"):
-        ui.label("Beam Scheduler v1.0").classes("self-center font-bold text-4xl -my-2")
-        ui.label("Made by Adnan Almulla @ Killa Design").classes("self-center text-2xl")
+        ui.label("Beam Scheduler v1.0").classes(
+            "self-center font-bold text-4xl -my-2"
+        )
+        ui.label("Made by Adnan Almulla @ Killa Design").classes(
+            "self-center text-2xl"
+        )
         ui.label(
             "To utilise this script appropriately, please consider and abide by the following:"
         ).classes("text-lg text-red-500 flex-nowrap")
@@ -113,7 +121,9 @@ def main_row(upload_handler):
         with ui.row().classes("pt-8 pb-6 pr-6 pl-10 justify-start items-start"):
             pass
         with ui.row().classes("mt-8 ml-4 pt-6 pr-6 pl-6 justify-center"):
-            with ui.card().classes("no-shadow border-[1px] rounded-full bg-sky-900"):
+            with ui.card().classes(
+                "no-shadow border-[1px] rounded-full bg-sky-900"
+            ):
                 ui.label(
                     "Please upload the extracted flexure and shear excel spreadsheet:"
                 ).classes("text-xl font-bold self-center")
@@ -123,13 +133,16 @@ def main_row(upload_handler):
     with ui.grid(columns=3).classes("w-full no-wrap"):
         with ui.row().classes("pt-8 pb-6 pr-6 pl-10 justify-start items-start"):
             pass
-        with ui.row().classes("mt-8 pt-6 pb-6 pr-6 pl-6 justify-center items-center"):
+        with ui.row().classes(
+            "mt-8 pt-6 pb-6 pr-6 pl-6 justify-center items-center"
+        ):
             ui.upload(
                 label="",
                 on_upload=upload_handler,
                 auto_upload=True,
                 on_rejected=lambda: ui.notify(
-                    "Please only upload an excel spreadsheet (.xlsx)", type="warning"
+                    "Please only upload an excel spreadsheet (.xlsx)",
+                    type="warning",
                 ),
             ).classes("w-96 text-lg self-center").props('accept=".xlsx"')
         with ui.row().classes("pt-8 pb-6 pr-6 pl-10 justify-start items-start"):

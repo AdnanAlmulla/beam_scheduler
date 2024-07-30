@@ -2,6 +2,7 @@
 
 This module contains the Beam
 """
+# TODO: update the module docstring.
 
 import beam
 import flexure

@@ -1,3 +1,5 @@
+"""Processes dataframe and cleans data derived from ETABS spreadsheet."""
+
 import beam
 import beam_design
 import pandas as pd
@@ -12,7 +14,7 @@ span_df = pd.read_excel(excel_file, sheet_name=2, header=1)
 flexural_df = flexural_df.drop([0])
 shear_df = shear_df.drop([0])
 span_df = span_df.drop([0])
-# Fetch the beam stories from the span df.
+# Fetch the beam stories from the span df.s
 stories = span_df["Story"].tolist()
 # Slice through the flexural df and get the etabs id.
 etabs_ids = span_df["Label"].tolist()
@@ -103,7 +105,7 @@ if dimension_error_check is False:
         ]
         for sublist in bot_flex_reinf_needed
     ]
-    # Take the required flexural torsion reinforcement and put it in a nested list.
+    # Take the required flexural torsion reinforcement and put it in a list.
     # Index 0 is left, Index 1 is middle, and Index 2 is right.
     flex_torsion_reinf_needed = shear_df["TLngRebar (Al)"].tolist()
     flex_torsion_reinf_needed = [
@@ -206,7 +208,22 @@ if dimension_error_check is False:
             req_shear_reinf,
             req_torsion_reinf,
         )
-        for stories, etabs_id, width, depth, span, concrete_grade, flexural_combo, req_top_flex_reinf, req_bot_flex_reinf, req_flex_torsion_reinf, shear_force, shear_overstressed, req_shear_reinf, req_torsion_reinf in zip(
+        for (
+            stories,
+            etabs_id,
+            width,
+            depth,
+            span,
+            concrete_grade,
+            flexural_combo,
+            req_top_flex_reinf,
+            req_bot_flex_reinf,
+            req_flex_torsion_reinf,
+            shear_force,
+            shear_overstressed,
+            req_shear_reinf,
+            req_torsion_reinf,
+        ) in zip(
             stories,
             etabs_ids,
             beam_widths,
@@ -224,7 +241,7 @@ if dimension_error_check is False:
         )
     ]
     designed_beams = []  # List to hold all the designed beams.
-    # Begin with for loop and create attributes for each beam instance to undertake calculations.
+    # Loop through beam instances and undertake beam design.
     for beam in beam_instances:
         # Instantiate the Beam Design object.
         beam_design_instance = beam_design.BeamDesign(beam)
@@ -255,7 +272,7 @@ if dimension_error_check is False:
         # # Grab the index of the side face reinforcement with the highest area.
         # beam.get_index_for_side_face_reinf()
 
-print(designed_beams[0].shear_design)
-# print(designed_beams[8].flexural_design)
-# print(designed_beams[8].shear_design.shear_spacing)
-# print(designed_beams[8].shear_design.shear_center_spacing)
+print(designed_beams[4].flexural_design)
+print(designed_beams[4].beam.depth)
+print(designed_beams[4].shear_design.shear_spacing)
+print(designed_beams[4].shear_design.shear_center_spacing)
