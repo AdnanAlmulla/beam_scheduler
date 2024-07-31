@@ -7,6 +7,7 @@ This module contains the Beam
 import beam
 import flexure
 import shear
+import sideface
 
 
 class BeamDesign:
@@ -27,7 +28,7 @@ class BeamDesign:
         self.beam = beam
         self.flexural_design: object = None
         self.shear_design: object = None
-        self.sideface_desgin: object = None
+        self.sideface_design: object = None
 
     # TODO: update the docstring to reflect the order of operations.
     def calculate_flexural_design(self) -> None:
@@ -41,7 +42,7 @@ class BeamDesign:
         self.flexural_design.flex_torsion_splitting()
         # Obtain the required top and bottom flexural reinforcement.
         self.flexural_design.get_flex_rebar()
-        # Check if the calculated rebar is feasible and alter it if not.abs
+        # Check if the calculated rebar is feasible and alter it if not.
         self.flexural_design.assess_feasibility()
         # Calculate the residual rebar obtained from the provided rebar.
         self.flexural_design.get_residual_rebar()
@@ -61,3 +62,16 @@ class BeamDesign:
         self.shear_design.get_min_shear_spacing()
         # Obtain the shear links reinforcement.
         self.shear_design.get_shear_links()
+
+    def calculate_sideface_design(self) -> None:
+        """Undertake sideface design."""
+        # First instantiate the sideface object.
+        self.sideface_design = sideface.Sideface(
+            self.beam, self.flexural_design, self.shear_design
+        )
+        # Calculate the total required torsion reinforcement after residual.
+        self.sideface_design.get_required_reinforcement()
+        # Get the sideface clear space.
+        self.sideface_design.get_sideface_clear_space()
+        # Obtain the sideface reinforcement.
+        self.sideface_design.get_sideface_rebar()

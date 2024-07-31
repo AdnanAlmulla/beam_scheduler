@@ -195,6 +195,7 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
             self.shear_center_spacing.sort(reverse=True)
 
     def get_shear_links(self) -> None:
+        # TODO: Copy left and right based on which is providing higher area.
         """Solve for the shear rebar.
 
         Takes the shear object and modifies the shear links attributes to
@@ -240,6 +241,8 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
             for location in self.shear_links:
                 self.shear_links[location]["links_text"] = "Overstressed"
 
+        # TODO: Copy left and right based on which is providing higher area.
+
     def _find_links_configuration(
         self, requirement: int, torsion_requirement: int, spacing: list
     ) -> dict:
@@ -251,8 +254,8 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
             spacing(list): The required spacing list.
 
         Returns:
-            dict: Returns the link text, provided reinforcement area, diameter
-            of each layer, and whether the beam object was solved or not.
+            dict: Returns the link text, provided reinforcement area, diameter,
+            spacing, and whether the beam object was solved or not.
         """
         best_combination = None
         min_excess_area = float("inf")

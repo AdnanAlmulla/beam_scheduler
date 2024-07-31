@@ -249,28 +249,15 @@ if dimension_error_check is False:
         beam_design_instance.calculate_flexural_design()
         # Undertake the process of shear design.
         beam_design_instance.calculate_shear_design()
+        # Undertake the process of sideface design.
+        beam_design_instance.calculate_sideface_design()
         # Append all the designed beams to the designed beams list.
         designed_beams.append(beam_design_instance)
-        # # Calculate the total required shear reinforcement including shear and torsion.
-        # beam.get_total_shear_req()
 
-        # # Calculate the provided shear reinforcement string and area.
-        # beam.get_min_shear_long_spacing()
-        # beam.get_shear_string()
-        # beam.get_shear_area()
-
-        # # Check and replace if necessary the maximum longitudinal shear spacing against Clause 18.4.2.4 of ACI 318-19.
-        # beam.modify_shear_reinf()
-
-        # # Calculate the allowable side face clear space in beams which have a depth greater than 600mm.
-        # beam.get_side_face_clear_space()
-
-        # # Calculate the provided side face reinforcement string and area.
-        # beam.get_side_face_string()
-        # beam.get_side_face_area()
-
-        # # Grab the index of the side face reinforcement with the highest area.
-        # beam.get_index_for_side_face_reinf()
-
-print(designed_beams[7].beam)
-print(designed_beams[7].shear_design)
+for beam in designed_beams:
+    if beam.beam.depth > 700:
+        print(beam.beam.req_torsion_flex_reinf)
+        print(beam.flexural_design.residual_rebar)
+        print(beam.sideface_design.required_torsion_reinforcement)
+        print(beam.sideface_design.sideface_rebar)
+        print(beam.sideface_design.sideface_clearspace)
