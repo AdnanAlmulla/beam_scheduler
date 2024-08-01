@@ -1,5 +1,26 @@
-"""Holds the flexure class."""
-# TODO: update the module docstring.
+"""Flexural design module for reinforced concrete beams.
+
+This module provides a Flexure class that handles the calculation and design of
+flexural reinforcement for reinforced concrete beams. It works in conjunction
+with the beam module to determine optimal rebar configurations for top and
+bottom reinforcement, considering torsional requirements and beam geometry.
+
+The module includes methods for calculating longitudinal rebar count, splitting
+torsional requirements, determining rebar configurations, assessing feasibility
+based on beam span, and calculating residual rebar for sideface reinforcement.
+
+Classes:
+    Flexure: Main class for flexural reinforcement calculations and design.
+
+Typical usage example:
+    beam_data = beam.Beam(...)  # Create a Beam object
+    flexure_design = Flexure(beam_data)
+    flexure_design.get_long_count()
+    flexure_design.flex_torsion_splitting()
+    flexure_design.get_flex_rebar()
+    flexure_design.assess_feasibility()
+    flexure_design.get_residual_rebar()
+"""
 
 import itertools
 from typing import List
@@ -8,8 +29,25 @@ import beam
 
 
 class Flexure:
-    # TODO: provide further information to class docstring.
-    """Holds and encapsulates attributes of a flexure object."""
+    """Encapsulates attributes and methods related to the flexure of a beam.
+
+    The Flexure class is responsible for holding information about the flexural
+    reinforcement in a beam. It includes attributes for the number and diameter
+    of flexural rebars, as well as detailed information about the top and
+    bottom flexural reinforcement at different sections (left, middle, right) of
+    the beam.
+
+    Attributes:
+        beam (beam): The beam object that the flexural attributes belong to.
+        flex_rebar_count (int): The count of flexural reinforcement bars.
+        flex_rebar_dia (List[int]): List of diameters for flexural rebars.
+        top_flex_rebar (dict): Dictionary containing the top flex reinforcement
+            in the left, middle, and right sections of the beam.
+        bot_flex_rebar (dict): Dictionary containing the bot flex reinforcement
+            in the left, middle, and right sections of the beam.
+        residual_rebar (dict): Dictionary containing the count of residual
+            rebars in the left, middle, and right sections of the beam.
+    """
 
     def __init__(self, beam: beam) -> None:
         """Initialises the flexural object and inherits the beam dataclass.

@@ -1,5 +1,30 @@
-"""Holds the beam dataclass and additional functions."""
-# TODO: update the module docstring.
+"""Beam properties and utility functions for reinforced concrete design.
+
+This module defines a Beam dataclass and provides utility functions for
+extracting beam properties from ETABS-style section descriptors.
+It includes methods for calculating beam dimensions, concrete grade, and
+reinforcement areas.
+
+Classes:
+    Beam: Dataclass representing the properties and design requirements of a
+    reinforced concrete beam.
+
+Functions:
+    get_width: Extracts the beam width from an ETABS section descriptor.
+    get_depth: Extracts the beam depth from an ETABS section descriptor.
+    get_comp_conc_grade: Extracts the concrete compressive strength from an
+    ETABs section descriptor.
+    provided_reinforcement: Calculates the area of a circular reinforcing bar.
+
+Typical usage example:
+    section = "B600X750C40/50"
+    width = get_width(section)
+    depth = get_depth(section)
+    fc_prime = get_comp_conc_grade(section)
+
+    beam = Beam(width=width, depth=depth, comp_conc_grade=fc_prime)
+    rebar_area = provided_reinforcement(20)  # Area of 20mm diameter bar
+"""
 
 from dataclasses import dataclass, field
 from typing import List
@@ -9,8 +34,34 @@ import numpy as np
 
 @dataclass
 class Beam:
-    # TODO: provide further information to class docstring.
-    """Holds and encapsulates attributes of a beam object."""
+    """Represent a reinforced concrete beam and its design parameters.
+
+    This class encapsulates various attributes of a beam including its geometry,
+    material properties, and reinforcement requirements. It is designed to work
+    with ETABS output and provide a structured representation of beam data for
+    further design calculations.
+
+    Attributes:
+        storey (str): The storey level of the beam.
+        etabs_id (str): The unique identifier for the beam in ETABS.
+        width (int): The width of the beam in mm.
+        depth (int): The overall depth of the beam in mm.
+        span (int): The span of the beam in mm.
+        comp_conc_grade (int): The compressive strength of concrete in MPa.
+        flex_overstressed (List[bool]): Flags for flex overstress [pos, neg].
+        req_top_flex_reinf (List[int]): Req top flex reinf [L, M, R] in mm².
+        req_bot_flex_reinf (List[int]): Req bot flex reinf [L, M, R] in mm².
+        req_torsion_flex_reinf (List[int]): Req tor flex reinf [L, M, R] in mm².
+        shear_force (List[int]): Shear forces [L, M, R] in kN.
+        shear_overstressed (List[bool]): Flag for shear overstress [shear, tor].
+        req_shear_reinf (List[int]): Req shear reinf [L, M, R] in mm².
+        req_torsion_reinf (List[int]): Req torsional reinf [L, M, R] in mm².
+        eff_depth (int): Effective depth of the beam in mm (calculated).
+
+    Note:
+        The effective depth is automatically calculated as 80% of the overall
+        depth upon initialization.
+    """
 
     storey: str = "No storey provided."
     etabs_id: str = "No ETABS ID."

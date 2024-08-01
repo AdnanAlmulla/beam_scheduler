@@ -1,5 +1,25 @@
-"""Holds the sideface class."""
-# TODO: update the module docstring.
+"""Sideface reinforcement design module for reinforced concrete beams.
+
+This module provides a Sideface class that handles the calculation and design of
+sideface reinforcement for reinforced concrete beams. It works in conjunction
+with the beam, flexure, and shear modules to determine optimal sideface rebar
+configurations.
+
+The module is specifically designed for beams with a depth greater than 700mm,
+addressing torsional reinforcement requirements and clear spacing constraints.
+
+Classes:
+    Sideface: Main class for sideface reinforcement calculations and design.
+
+Typical usage example:
+    beam_data = beam.Beam(...)  # Create a Beam object
+    flexure_design = flexure.Flexure(...)  # Create a Flexure object
+    shear_design = shear.Shear(...)  # Create a Shear object
+    sideface = Sideface(beam_data, flexure_design, shear_design)
+    sideface.get_required_reinforcement()
+    sideface.get_sideface_clear_space()
+    sideface.get_sideface_rebar()
+"""
 
 import itertools
 from typing import List
@@ -10,8 +30,28 @@ import shear
 
 
 class Sideface:
-    # TODO: provide further information to class docstring.
-    """Holds and encapsulates attributes of a sideface object."""
+    """Encapsulates attributes / methods related to the sideface reinforcement.
+
+    The Sideface class holds information about the sideface reinforcement in a
+    beam. It includes attributes for the diameters and spacing of sideface
+    rebars, the clear space, the required torsion reinforcement in different
+    sections (left, middle, right) of the beam, and detailed information about
+    the provided sideface reinforcement.
+
+    Attributes:
+        beam (beam): The beam object that the sideface attributes belong to.
+        flexure (flexure): The flexure object related to the beam.
+        shear (shear): The shear object related to the beam.
+        sideface_dia (List[int]): List of diameters for sideface rebars.
+        sideface_spacing (List[int]): List of spacings for sideface rebars.
+        sideface_clearspace (int): The clear space for sideface reinforcement.
+        required_torsion_reinforcement (dict): Dictionary containing the
+            required torsion reinforcement in the left, middle, and right
+            sections of the beam.
+        sideface_rebar (dict): Dictionary containing the provided sideface
+            reinforcement, including rebar text, provided
+            reinforcement, diameter, spacing, and if the solution is solved.
+    """
 
     def __init__(self, beam: beam, flexure: flexure, shear: shear) -> None:
         """Initialises sideface object and inherits beam and shear/flex objects.

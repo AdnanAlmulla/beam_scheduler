@@ -1,5 +1,27 @@
-"""Holds the shear class."""
-# TODO: update the module docstring.
+"""Shear design module for reinforced concrete beams.
+
+This module provides a Shear class that handles the calculation and design of
+shear reinforcement for reinforced concrete beams. It works in conjunction with
+the beam and flexure modules to determine optimal shear link configurations,
+considering both shear and torsional requirements.
+
+The module includes methods for calculating shear link counts, assessing
+transverse shear spacing requirements, determining total shear reinforcement
+needs, calculating minimum shear spacing, and designing shear links.
+
+Classes:
+    Shear: Main class for shear reinforcement calculations and design.
+
+Typical usage example:
+    beam_data = beam.Beam(...)  # Create a Beam object
+    flexure_design = flexure.Flexure(...)  # Create a Flexure object
+    shear_design = Shear(beam_data, flexure_design)
+    shear_design.get_shear_links_count()
+    shear_design.assess_transverse_shear_spacing()
+    shear_design.get_total_shear_req()
+    shear_design.get_min_shear_spacing()
+    shear_design.get_shear_links()
+"""
 
 import itertools
 from typing import List
@@ -10,8 +32,30 @@ import numpy as np
 
 
 class Shear:
-    # TODO: provide further information to class docstring.
-    """Holds and encapsulates attributes of a shear object."""
+    """Encapsulates attributes and methods related to shear reinforcement.
+
+    The Shear class holds information about the beam shear reinforcement.
+    It includes attributes for the diameters and spacing of shear rebars,
+    total required shear reinforcement in different sections (left, middle,
+    right) of the beam, and detailed information about the provided shear
+    reinforcement.
+
+    Attributes:
+        beam (beam): The beam object that the shear attributes belong to.
+        flexure (flexure): The flexure object related to the beam.
+        total_req_shear (List[int]): List of total required shear
+        reinforcement for left, middle, and right sections.
+        shear_dia (List[int]): List of diameters for shear rebars.
+        shear_spacing (List[int]): List of spacing values for shear rebars.
+        shear_center_spacing (List[int]): List of center spacing values for
+        shear rebars.
+        shear_links_count (list): List containing the count of shear links.
+        shear_links (dict): Dictionary containing information about the
+            provided shear reinforcement in the left, middle, and right
+            sections of the beam.
+        check_transverse_shear_spacing (bool): Flag indicating if transverse
+            shear spacing is checked.
+    """
 
     def __init__(self, beam: beam, flexure: flexure) -> None:
         """Initialises shear object and inherits the beam and flexure objects.
