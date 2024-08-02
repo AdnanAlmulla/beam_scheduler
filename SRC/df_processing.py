@@ -359,54 +359,18 @@ def process_dataframes(flexural_df, shear_df, span_df):
                 ("Shear links", "Middle (J)"),
                 ("Shear links", "Right (K)"),
                 ("Check Transverse Shear Spacing?", ""),
-                (
-                    "Flexural BL Reinforcement Criteria",
-                    "Required (mm^2)",
-                ),
-                (
-                    "Flexural BL Reinforcement Criteria",
-                    "Provided (mm^2)",
-                ),
-                (
-                    "Flexural BM Reinforcement Criteria",
-                    "Required (mm^2)",
-                ),
-                (
-                    "Flexural BM Reinforcement Criteria",
-                    "Provided (mm^2)",
-                ),
-                (
-                    "Flexural BR Reinforcement Criteria",
-                    "Required (mm^2)",
-                ),
-                (
-                    "Flexural BR Reinforcement Criteria",
-                    "Provided (mm^2)",
-                ),
-                (
-                    "Flexural TL Reinforcement Criteria",
-                    "Required (mm^2)",
-                ),
-                (
-                    "Flexural TL Reinforcement Criteria",
-                    "Provided (mm^2)",
-                ),
-                (
-                    "Flexural TM Reinforcement Criteria",
-                    "Required (mm^2)",
-                ),
-                (
-                    "Flexural TM Reinforcement Criteria",
-                    "Provided (mm^2)",
-                ),
-                (
-                    "Flexural TR Reinforcement Criteria",
-                    "Required (mm^2)",
-                ),
-                (
-                    "Flexural TR Reinforcement Criteria",
-                    "Provided (mm^2)",
-                ),
+                ("Flexural BL Reinforcement Criteria", "Required (mm^2)"),
+                ("Flexural BL Reinforcement Criteria", "Provided (mm^2)"),
+                ("Flexural BM Reinforcement Criteria", "Required (mm^2)"),
+                ("Flexural BM Reinforcement Criteria", "Provided (mm^2)"),
+                ("Flexural BR Reinforcement Criteria", "Required (mm^2)"),
+                ("Flexural BR Reinforcement Criteria", "Provided (mm^2)"),
+                ("Flexural TL Reinforcement Criteria", "Required (mm^2)"),
+                ("Flexural TL Reinforcement Criteria", "Provided (mm^2)"),
+                ("Flexural TM Reinforcement Criteria", "Required (mm^2)"),
+                ("Flexural TM Reinforcement Criteria", "Provided (mm^2)"),
+                ("Flexural TR Reinforcement Criteria", "Required (mm^2)"),
+                ("Flexural TR Reinforcement Criteria", "Provided (mm^2)"),
                 ("Shear L Reinforcement Criteria", "Required (mm^2)"),
                 ("Shear L Reinforcement Criteria", "Provided (mm^2)"),
                 ("Shear M Reinforcement Criteria", "Required (mm^2)"),
@@ -519,7 +483,7 @@ def process_dataframes(flexural_df, shear_df, span_df):
         }
 
         # Loop through all the beam instances and populate the beam schedule dataframe with relevant information.
-        for idx, beam in enumerate(beam_instances):  # type: ignore
+        for idx, beam in enumerate(beam_instances):
             for attr, col in beam_mapping.items():
                 value = getattr(beam, attr)
                 if isinstance(value, str):

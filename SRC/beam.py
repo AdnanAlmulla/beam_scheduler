@@ -93,7 +93,7 @@ class Beam:
     req_torsion_reinf: List[int] = field(
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
-    eff_depth: int = field(init=False)  # in mm
+    eff_depth: float = field(init=False)  # in mm
 
     def __post_init__(self) -> None:
         """Initialises effective depth once the depth attribute is provided."""

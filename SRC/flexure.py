@@ -49,7 +49,7 @@ class Flexure:
             rebars in the left, middle, and right sections of the beam.
     """
 
-    def __init__(self, beam: beam) -> None:
+    def __init__(self, beam: beam.Beam) -> None:
         """Initialises the flexural object and inherits the beam dataclass.
 
         Args:
@@ -130,13 +130,13 @@ Residual flexural rebar: {self.residual_rebar}"""
             divided_torsion_list = [
                 i / 2 for i in self.beam.req_torsion_flex_reinf
             ]
-            self.beam.req_top_flex_reinf = [
+            self.beam.req_top_flex_reinf = [  # pyright: ignore reportAttributeAccessIssue
                 a + b
                 for a, b in zip(
                     divided_torsion_list, self.beam.req_top_flex_reinf
                 )
             ]
-            self.beam.req_bot_flex_reinf = [
+            self.beam.req_bot_flex_reinf = [  # pyright: ignore reportAttributeAccessIssue
                 a + b
                 for a, b in zip(
                     divided_torsion_list, self.beam.req_bot_flex_reinf

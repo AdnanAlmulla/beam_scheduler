@@ -53,7 +53,9 @@ class Sideface:
             reinforcement, diameter, spacing, and if the solution is solved.
     """
 
-    def __init__(self, beam: beam, flexure: flexure, shear: shear) -> None:
+    def __init__(
+        self, beam: beam.Beam, flexure: flexure.Flexure, shear: shear.Shear
+    ) -> None:
         """Initialises sideface object and inherits beam and shear/flex objects.
 
         Args:

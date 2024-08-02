@@ -34,16 +34,18 @@ class BeamDesign:
     sideface_design: Object encompassing shear schedule attributes.
     """
 
-    def __init__(self, beam: beam) -> None:
+    def __init__(self, beam: beam.Beam) -> None:
         """Initialises the beam design object and inherits the beam dataclass.
 
         Args:
             beam (beam): Beam dataclass object.
         """
         self.beam = beam
-        self.flexural_design: object = None
-        self.shear_design: object = None
-        self.sideface_design: object = None
+        self.flexural_design = flexure.Flexure(self.beam)
+        self.shear_design = shear.Shear(self.beam, self.flexural_design)
+        self.sideface_design = sideface.Sideface(
+            self.beam, self.flexural_design, self.shear_design
+        )
 
     def calculate_flexural_design(self) -> None:
         """Undertake flexural design.
@@ -58,8 +60,6 @@ class BeamDesign:
         5) The residual flexural rebar is derived to subtract from sideface
         requirements.
         """
-        # First instantiate the flexure object.
-        self.flexural_design = flexure.Flexure(self.beam)
         # Get the longitudinal rebar count.
         self.flexural_design.get_long_count()
         # Split the torsion reinforcement to the top and bottom rebar
@@ -86,8 +86,6 @@ class BeamDesign:
         requirements.
         5) The optimal shear links schedule is obtained.
         """
-        # First instantiate the shear object.
-        self.shear_design = shear.Shear(self.beam, self.flexural_design)
         # Calculate the required shear links count.
         self.shear_design.get_shear_links_count()
         # Assess if transverse shear spacing needs to be checked.
@@ -109,10 +107,6 @@ class BeamDesign:
         flexural and shear diameters.
         3) The optimal sideface schedule is obtained.
         """
-        # First instantiate the sideface object.
-        self.sideface_design = sideface.Sideface(
-            self.beam, self.flexural_design, self.shear_design
-        )
         # Calculate the total required torsion reinforcement after residual.
         self.sideface_design.get_required_reinforcement()
         # Get the sideface clear space.

@@ -254,10 +254,9 @@ if dimension_error_check is False:
         # Append all the designed beams to the designed beams list.
         designed_beams.append(beam_design_instance)
 
-for beam in designed_beams:
-    if beam.beam.depth > 700:
-        print(beam.beam.req_torsion_flex_reinf)
-        print(beam.flexural_design.residual_rebar)
-        print(beam.sideface_design.required_torsion_reinforcement)
-        print(beam.sideface_design.sideface_rebar)
-        print(beam.sideface_design.sideface_clearspace)
+    # for beam in designed_beams:
+    #     if beam.beam.depth <= 700:
+    #         print(beam.beam.req_top_flex_reinf)
+    #         print(beam.beam.req_torsion_flex_reinf)
+    #         print(beam.beam.req_bot_flex_reinf)
+    #         # print(beam.shear_design)

@@ -57,7 +57,7 @@ class Shear:
             shear spacing is checked.
     """
 
-    def __init__(self, beam: beam, flexure: flexure) -> None:
+    def __init__(self, beam: beam.Beam, flexure: flexure.Flexure) -> None:
         """Initialises shear object and inherits the beam and flexure objects.
 
         Args:
@@ -182,8 +182,8 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
         longitudinal spacing does not exceed its codal maximum for the
         left/right and middle shear links.
         """
-        # ! By writing this conditional, an overstressed condition in top or
-        # ! bottom flex reinforcement will not solve for shear reinforcement.
+        #! By writing this conditional, an overstressed condition in top or
+        #! bottom flex reinforcement will not solve for shear reinforcement.
         if not (
             any(self.beam.flex_overstressed)
             or any(self.beam.shear_overstressed)
@@ -219,7 +219,7 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
                 (100, 125, 100),
             ]
 
-            def update_spacing(spacing_list: list, min_spacing: int) -> list:
+            def update_spacing(spacing_list: list, min_spacing: float) -> list:
                 for lower, upper, value in spacing_thresholds:
                     if lower <= min_spacing < upper:
                         spacing_list.append(value)
@@ -239,7 +239,6 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
             self.shear_center_spacing.sort(reverse=True)
 
     def get_shear_links(self) -> None:
-        # TODO: Copy left and right based on which is providing higher area.
         """Solve for the shear rebar.
 
         Takes the shear object and modifies the shear links attributes to
@@ -248,7 +247,7 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
         configuration.
         """
         locations = ["left", "middle", "right"]
-        # Flex overstressed is checked as minimum shear spacing is not solved.
+        #! Flex overstressed is checked as minimum shear spacing is not solved.
         if not (
             any(self.beam.flex_overstressed)
             or any(self.beam.shear_overstressed)
@@ -268,6 +267,8 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
                         "spacing": result["spacing"],
                         "solved": result["solved"],
                     }
+                    # Copy the highest provided to the left or right.
+                    self._copy_highest_provided(self.shear_links)
                 else:
                     result = self._find_links_configuration(
                         requirement,
@@ -285,17 +286,15 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
             for location in self.shear_links:
                 self.shear_links[location]["links_text"] = "Overstressed"
 
-        # TODO: Copy left and right based on which is providing higher area.
-
     def _find_links_configuration(
-        self, requirement: int, torsion_requirement: int, spacing: list
+        self, requirement: int, torsion_requirement: int, spacings: list
     ) -> dict:
         """Find the optimal links configuration for the required rebar area.
 
         Args:
             requirement (int): The required rebar area (mm^2)
             torsion_requirement(int): The required torsion rebar area (mm^2)
-            spacing(list): The required spacing list.
+            spacings(list): The required spacing list.
 
         Returns:
             dict: Returns the link text, provided reinforcement area, diameter,
@@ -305,7 +304,7 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
         min_excess_area = float("inf")
         # Consider all combinations of diameter, spacing, and count.
         all_combinations = list(
-            itertools.product(self.shear_dia, self.shear_links_count, spacing)
+            itertools.product(self.shear_dia, self.shear_links_count, spacings)
         )
         for diameter, count, spacing in all_combinations:
             provided = (
@@ -341,3 +340,19 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
                 "solved": False,
             }
             return best_combination
+
+    def _copy_highest_provided(self, shear_links: dict) -> dict:
+        """Copy the highest reinforcement of either the left or right.
+
+        Args:
+            shear_links (dict): The shear links dictionary
+
+        Returns:
+            dict: The updated shear links dictionary with both sides identical.
+        """
+        left, right = shear_links["left"], shear_links["right"]
+        max_side = max([left, right], key=lambda x: x["provided_reinf"])
+        min_side = left if max_side == right else right
+
+        min_side.update(max_side)
+        return shear_links
