@@ -27,7 +27,6 @@ Typical usage example:
 """
 
 from dataclasses import dataclass, field
-from typing import List
 
 import numpy as np
 
@@ -70,27 +69,27 @@ class Beam:
     span: int = 0  # in mm
     comp_conc_grade: int = 0  # in MPa (n/mm^2)
     # * Index 0 of this list is positive flexure, index 1 is negative flexure.
-    flex_overstressed: List[bool] = field(
+    flex_overstressed: list[bool] = field(
         default_factory=lambda: [False, False]
     )
-    req_top_flex_reinf: List[int] = field(
+    req_top_flex_reinf: list[int] = field(
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
-    req_bot_flex_reinf: List[int] = field(
+    req_bot_flex_reinf: list[int] = field(
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
-    req_torsion_flex_reinf: List[int] = field(
+    req_torsion_flex_reinf: list[int] = field(
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
-    shear_force: List[int] = field(default_factory=lambda: [0, 0, 0])  # in kN
+    shear_force: list[int] = field(default_factory=lambda: [0, 0, 0])  # in kN
     # * Index 0 of this list is shear, index 1 is torsion.
-    shear_overstressed: List[bool] = field(
+    shear_overstressed: list[bool] = field(
         default_factory=lambda: [False, False]
     )
-    req_shear_reinf: List[int] = field(
+    req_shear_reinf: list[int] = field(
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
-    req_torsion_reinf: List[int] = field(
+    req_torsion_reinf: list[int] = field(
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
     eff_depth: float = field(init=False)  # in mm

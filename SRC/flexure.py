@@ -23,7 +23,6 @@ Typical usage example:
 """
 
 import itertools
-from typing import List
 
 import beam
 
@@ -57,23 +56,26 @@ class Flexure:
         """
         self.beam = beam
         self.flex_rebar_count: int = 0
-        self.flex_rebar_dia: List[int] = [16, 20, 25, 32]
+        self.flex_rebar_dia: list[int] = [16, 20, 25, 32]
         self.top_flex_rebar: dict = {
             "left": {
                 "rebar_text": "",
                 "provided_reinf": 0,
+                "utilization": "-",
                 "diameter": [],
                 "solved": False,
             },
             "middle": {
                 "rebar_text": "",
                 "provided_reinf": 0,
+                "utilization": "-",
                 "diameter": [],
                 "solved": False,
             },
             "right": {
                 "rebar_text": "",
                 "provided_reinf": 0,
+                "utilization": "-",
                 "diameter": [],
                 "solved": False,
             },
@@ -82,18 +84,21 @@ class Flexure:
             "left": {
                 "rebar_text": "",
                 "provided_reinf": 0,
+                "utilization": "-",
                 "diameter": [],
                 "solved": False,
             },
             "middle": {
                 "rebar_text": "",
                 "provided_reinf": 0,
+                "utilization": "-",
                 "diameter": [],
                 "solved": False,
             },
             "right": {
                 "rebar_text": "",
                 "provided_reinf": 0,
+                "utilization": "-",
                 "diameter": [],
                 "solved": False,
             },
@@ -128,17 +133,18 @@ Residual flexural rebar: {self.residual_rebar}"""
         """
         if True not in self.beam.flex_overstressed and self.beam.depth <= 700:
             divided_torsion_list = [
-                i / 2 for i in self.beam.req_torsion_flex_reinf
+                flex_torsion_area / 2
+                for flex_torsion_area in self.beam.req_torsion_flex_reinf
             ]
             self.beam.req_top_flex_reinf = [  # pyright: ignore reportAttributeAccessIssue
-                a + b
-                for a, b in zip(
+                divided_flex_tor_area + top_flex_area
+                for divided_flex_tor_area, top_flex_area in zip(
                     divided_torsion_list, self.beam.req_top_flex_reinf
                 )
             ]
             self.beam.req_bot_flex_reinf = [  # pyright: ignore reportAttributeAccessIssue
-                a + b
-                for a, b in zip(
+                divided_flex_tor_area + bot_flex_area
+                for divided_flex_tor_area, bot_flex_area in zip(
                     divided_torsion_list, self.beam.req_bot_flex_reinf
                 )
             ]
@@ -165,6 +171,7 @@ Residual flexural rebar: {self.residual_rebar}"""
                 self.top_flex_rebar[location] = {
                     "rebar_text": result["rebar_text"],
                     "provided_reinf": result["provided_reinf"],
+                    "utilization": result["utilization"],
                     "diameter": result["diameter"],
                     "solved": result["solved"],
                 }
@@ -181,6 +188,7 @@ Residual flexural rebar: {self.residual_rebar}"""
                 self.bot_flex_rebar[location] = {
                     "rebar_text": result["rebar_text"],
                     "provided_reinf": result["provided_reinf"],
+                    "utilization": result["utilization"],
                     "diameter": result["diameter"],
                     "solved": result["solved"],
                 }
@@ -222,15 +230,18 @@ Residual flexural rebar: {self.residual_rebar}"""
                 beam.provided_reinforcement(diameter) * self.flex_rebar_count
                 for diameter in sorted_combination
             )
+            utilization = requirement / provided
             return {
                 "rebar_text": rebar_text,
                 "provided_reinf": round(provided),
+                "utilization": round(utilization * 100, 1),
                 "diameter": sorted_combination,
                 "solved": True,
             }
         return {
             "rebar_text": "Required rebar exceeds two layers. Please assess.",
             "provided_reinf": 0,
+            "utilization": "-",
             "diameter": [],
             "solved": False,
         }

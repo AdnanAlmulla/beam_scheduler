@@ -11,7 +11,7 @@ from nicegui import events, ui
 processed_beam_schedule_df = None
 
 
-def main():
+def main() -> None:
     gui.start_popup()
     gui.ui_header()
     gui.main_row(lambda e: excel_handler(e, main_container))
@@ -94,7 +94,7 @@ async def process_content(e: events.UploadEventArguments, container):
             )
 
 
-def add_down_button():
+def add_down_button() -> None:
     with ui.grid(columns=3).classes("w-full no-wrap mt-5"):
         with ui.row().classes("pt-8 pb-6 pr-6 pl-10 justify-start items-start"):
             pass
@@ -113,39 +113,33 @@ def add_down_button():
 
 
 # Create the relevant functions to export the excel file
-def export_file(beam_schedule_df):
+def export_file(beam_schedule_df: pd.DataFrame) -> bytes:
     # Use BytesIO as an in-memory buffer
     output = io.BytesIO()
-
     # Create an Excel writer object with the BytesIO object
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
         # Write the entire DataFrame to the first sheet
         beam_schedule_df.to_excel(
             writer, sheet_name="Beam Reinforcement Schedule"
         )
-
         # Group by the 'Storey' column
         grouped = beam_schedule_df.groupby("Storey", sort=False)
-
         # Iterate through the groups and write to separate sheets
         for name, group in grouped:
             sheet_name = f"{name}"
             group.to_excel(writer, sheet_name=sheet_name)
-
     # Return the Excel file content from the in-memory buffer
     return output.getvalue()
 
 
-def download_handler():
+def download_handler() -> None:
     global processed_beam_schedule_df
     # Call export_file to get the in-memory Excel file
     excel_content = export_file(processed_beam_schedule_df)
-
     # Write the content to a temporary file
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
         tmp.write(excel_content)
         tmp_path = tmp.name  # Store the file path
-
     # Initiate the download using the file path
     ui.download(tmp_path, "beam_schedule.xlsx")
 

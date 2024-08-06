@@ -22,7 +22,6 @@ Typical usage example:
 """
 
 import itertools
-from typing import List
 
 import beam
 import flexure
@@ -66,8 +65,8 @@ class Sideface:
         self.beam = beam
         self.flexure = flexure
         self.shear = shear
-        self.sideface_dia: List[int] = [16, 20, 25]
-        self.sideface_spacing: List[int] = [250, 200, 150]
+        self.sideface_dia: list[int] = [16, 20, 25]
+        self.sideface_spacing: list[int] = [250, 200, 150]
         self.sideface_clearspace: int = 0
         self.required_torsion_reinforcement: dict = {
             "left": 0,
@@ -82,7 +81,15 @@ class Sideface:
             "solved": False,
         }
 
-    # TODO: create __repr__ magic method
+    def __repr__(self) -> str:
+        """String representation of sideface object.
+
+        Returns:
+            str: Sideface object string.
+        """
+        return f"""Req tor reinforcement: {self.required_torsion_reinforcement},
+Sideface clearspace: {self.sideface_clearspace},
+Sideface rebar: {self.sideface_rebar}"""
 
     def get_required_reinforcement(self) -> None:
         """Calculate the required flexural torsion reinforcement.

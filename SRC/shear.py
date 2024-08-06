@@ -24,7 +24,6 @@ Typical usage example:
 """
 
 import itertools
-from typing import List
 
 import beam
 import flexure
@@ -66,15 +65,16 @@ class Shear:
         """
         self.beam = beam
         self.flexure = flexure
-        self.total_req_shear: List[int] = [0, 0, 0]
-        self.shear_dia: List[int] = [12, 16]
-        self.shear_spacing: List[int] = [250, 200, 150, 125, 100]
-        self.shear_center_spacing: List[int] = [250, 200, 150, 125, 100]
+        self.total_req_shear: list[int] = [0, 0, 0]
+        self.shear_dia: list[int] = [12, 16]
+        self.shear_spacing: list[int] = [250, 200, 150, 125, 100]
+        self.shear_center_spacing: list[int] = [250, 200, 150, 125, 100]
         self.shear_links_count: list = []
         self.shear_links: dict = {
             "left": {
                 "links_text": "",
                 "provided_reinf": 0,
+                "utilization": "-",
                 "diameter": 0,
                 "spacing": 0,
                 "solved": False,
@@ -82,6 +82,7 @@ class Shear:
             "middle": {
                 "links_text": "",
                 "provided_reinf": 0,
+                "utilization": "-",
                 "diameter": 0,
                 "spacing": 0,
                 "solved": False,
@@ -89,6 +90,7 @@ class Shear:
             "right": {
                 "links_text": "",
                 "provided_reinf": 0,
+                "utilization": "-",
                 "diameter": 0,
                 "spacing": 0,
                 "solved": False,
@@ -263,6 +265,7 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
                     self.shear_links[location] = {
                         "links_text": result["links_text"],
                         "provided_reinf": result["provided_reinf"],
+                        "utilization": result["utilization"],
                         "diameter": result["diameter"],
                         "spacing": result["spacing"],
                         "solved": result["solved"],
@@ -278,6 +281,7 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
                     self.shear_links[location] = {
                         "links_text": result["links_text"],
                         "provided_reinf": result["provided_reinf"],
+                        "utilization": result["utilization"],
                         "diameter": result["diameter"],
                         "spacing": result["spacing"],
                         "solved": result["solved"],
@@ -287,7 +291,7 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
                 self.shear_links[location]["links_text"] = "Overstressed"
 
     def _find_links_configuration(
-        self, requirement: int, torsion_requirement: int, spacings: list
+        self, requirement: int, torsion_requirement: int, spacings: list[int]
     ) -> dict:
         """Find the optimal links configuration for the required rebar area.
 
@@ -325,6 +329,7 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
                     best_combination = {
                         "links_text": f"{count}L-T{diameter}@{spacing}",
                         "provided_reinf": round(provided),
+                        "utilization": round((requirement / provided) * 100, 1),
                         "diameter": diameter,
                         "spacing": spacing,
                         "solved": True,
@@ -335,6 +340,7 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
             best_combination = {
                 "links_text": "Cannot satisfy requirement. Please reassess",
                 "provided_reinf": 0,
+                "utilization": "-",
                 "diameter": 0,
                 "spacing": 0,
                 "solved": False,
