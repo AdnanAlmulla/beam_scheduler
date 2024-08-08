@@ -1,123 +1,173 @@
+"""Main module for the Beam Scheduler application.
+
+This module serves as the entry point for the Beam Scheduler application. It handles
+the file upload process, data processing, and file download functionality. The module
+integrates with the user interface components defined in the beamscheduler_gui module
+and utilizes data extraction and processing functions from other modules.
+
+The application allows users to upload an Excel spreadsheet containing beam data,
+processes this data to create a beam schedule, and provides the option to download
+the resulting schedule.
+
+Functions:
+    main: Initialize the user interface and run the application.
+    excel_handler: Handle the uploaded Excel spreadsheet and initiate processing.
+    process_content: Process the uploaded spreadsheet data and create the beam schedule.
+    download_handler: Handle the download request for the processed beam schedule.
+    export_file: Export the processed beam schedule to an Excel file.
+
+Note:
+    This module requires the following dependencies:
+    - asyncio
+    - io
+    - tempfile
+    - pandas
+    - nicegui
+    - Custom modules: beamscheduler_gui, data_extraction, data_processing
+
+The application adheres to ACI 318-19 standards for beam design and expects
+specific formatting in the input Excel spreadsheet.
+"""
+
 import asyncio
 import io
 import tempfile
 
 import beamscheduler_gui as gui
-import df_processing as pr
+import data_extraction
+import data_processing
 import pandas as pd
 from nicegui import events, ui
 
-# Global variable to store the processed DataFrame
 processed_beam_schedule_df = None
 
 
-def main() -> None:
+def main() -> None:  # noqa: D103
     gui.start_popup()
     gui.ui_header()
-    gui.main_row(lambda e: excel_handler(e, main_container))
-    main_container = gui.download_button()
+    gui.main_row(lambda e: excel_handler(e, download_container))
+    download_container = gui.download_container()
     ui.run(reload=False, title="Beam Scheduler", native=True)
 
 
 # Handle and utilise the excel spreadsheet for processing.
-def excel_handler(e: events.UploadEventArguments, container):
-    global processed_beam_schedule_df
-    xl = pd.ExcelFile(e.content)
-    if len(xl.sheet_names) == 4:
+def excel_handler(
+    excel_string: events.UploadEventArguments, container: ui.grid
+) -> None:
+    """Handle and deploy the uploaded spreadsheet and container.
+
+    Args:
+        excel_string (events.UploadEventArguments): The uploaded excel sheet.
+        container (ui.grid): The download button container.
+    """
+    excel = pd.ExcelFile(excel_string.content)
+    if len(excel.sheet_names) == 4:
         ui.notify(
-            f"{e.name} successfully uploaded! Please await processing.",
+            f"""{excel_string.name} successfully uploaded! Please await 
+            processing.""",
             type="positive",
         )
         # Schedule the processing of the content asynchronously
-        asyncio.create_task(process_content(e, container))
+        asyncio.create_task(process_content(excel_string, container))
     else:
         ui.notify(
-            f"{e.name} does not contain the correct number of sheets. Are you sure flexure and shear are in the same spreadsheet?",
+            f"""{excel_string.name} does not contain the correct number of 
+            sheets. Are you sure flexure and shear are in the same 
+            spreadsheet?""",
             type="warning",
         )
 
 
-async def process_content(e: events.UploadEventArguments, container):
+async def process_content(
+    excel_string: events.UploadEventArguments, container: ui.grid
+) -> None:
+    """Process the uploaded spreadsheet and container. Undertake design.
+
+    Args:
+        excel_string (events.UploadEventArguments): The uploaded excel sheet.
+        container (ui.grid): The download button container.
+    """
     global processed_beam_schedule_df
-    excel_file = e.content
-    checking_span = pd.read_excel(excel_file, sheet_name=0)
-    checking_flex = pd.read_excel(excel_file, sheet_name=1)
-    checking_shear = pd.read_excel(excel_file, sheet_name=2)
+    excel_file = excel_string.content
+    checking_flex = pd.read_excel(excel_file, sheet_name=0)
+    checking_shear = pd.read_excel(excel_file, sheet_name=1)
+    checking_span = pd.read_excel(excel_file, sheet_name=2)
     if (
         checking_flex.columns[0]
         == "TABLE:  Concrete Beam Flexure Envelope - ACI 318-19"
         and checking_shear.columns[0]
         == "TABLE:  Concrete Beam Shear Envelope - ACI 318-19"
-        and checking_span.columns[0] == "TABLE:  Beam Object Connectivity"
+        and checking_span.columns[0] == "TABLE:  Frame Assignments - Summary"
     ):
-        initial_flexural_df = pd.read_excel(excel_file, sheet_name=1)
-        initial_shear_df = pd.read_excel(excel_file, sheet_name=2)
-        initial_span_df = pd.read_excel(excel_file, sheet_name=0)
+        beam_parameters = data_extraction.extract_data(excel_string.content)
         processed_beam_schedule_df = await asyncio.to_thread(
-            pr.process_dataframes,
-            initial_flexural_df,
-            initial_shear_df,
-            initial_span_df,
+            data_processing.process_data, beam_parameters
         )
         with container:
-            if isinstance(processed_beam_schedule_df, str):
-                if (
-                    processed_beam_schedule_df
-                    == "Incorrect section definitions"
-                ):
-                    ui.notify(
-                        "The section definitions as exported in the spreadsheet do not abide with the syntax required. Please update and try again.",
-                        type="negative",
-                    )
+            if processed_beam_schedule_df.empty:
+                ui.notify(
+                    """The section definitions as exported in the spreadsheet 
+                    do not abide with the syntax required. Please update and 
+                    try again.""",
+                    type="negative",
+                )
             elif processed_beam_schedule_df is None:
                 ui.notify(
-                    "No data available for download or uploaded file does not adhere to considerations. Please try again.",
+                    """No data available for download or uploaded file does not 
+                    adhere to considerations. Please try again.""",
                     type="negative",
                 )
             elif isinstance(processed_beam_schedule_df, pd.DataFrame):
                 if processed_beam_schedule_df.empty:
                     ui.notify(
-                        "Processing did not go through and spreadsheet is empty. Please revise and consider context then try again",
+                        """Processing did not go through and spreadsheet is 
+                        empty. Please revise and consider context then try 
+                        again""",
                         type="warning",
                     )
                 else:
                     ui.notify(
-                        "Processing complete. Please download the completed beam schedule.",
+                        """Processing complete. Please download the completed 
+                        beam schedule.""",
                         type="positive",
                     )
-                    add_down_button()
+                    gui.add_down_button(container, download_handler)
     else:
         with container:
             ui.notify(
-                f"{e.name} does not contain the correct sheets. Are you sure flexure, shear, and beam object connectivity are in the this spreadsheet?",
+                f"""{excel_string.name} does not contain the correct sheets. Are
+                you sure flexure and shear are in the this spreadsheet?""",
                 type="warning",
             )
 
 
-def add_down_button() -> None:
-    with ui.grid(columns=3).classes("w-full no-wrap mt-5"):
-        with ui.row().classes("pt-8 pb-6 pr-6 pl-10 justify-start items-start"):
-            pass
-        with ui.row().classes(
-            "pt-6 pb-6 pr-6 pl-6 justify-center items-center"
-        ):
-            ui.button(
-                "download beam schedule",
-                on_click=download_handler,
-                color="#075985",
-            ).classes("text-lg font-bold self-center rounded-full").on(
-                "click", lambda: ui.notify("Downloading...")
-            )
-        with ui.row().classes("pt-8 pb-6 pr-6 pl-10 justify-start items-start"):
-            pass
+def download_handler() -> None:
+    """Handle the download button. Calls the export file functon."""
+    global processed_beam_schedule_df
+    # Call export_file to get the in-memory Excel file
+    excel_content = export_file(processed_beam_schedule_df)  # type: ignore
+    # Write the content to a temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+        tmp.write(excel_content)
+        tmp_path = tmp.name  # Store the file path
+    # Initiate the download using the file path
+    ui.download(tmp_path, "beam_schedule.xlsx")
 
 
 # Create the relevant functions to export the excel file
 def export_file(beam_schedule_df: pd.DataFrame) -> bytes:
+    """Take the beam schedule and export it into an excel spreadsheet.
+
+    Args:
+        beam_schedule_df (pd.DataFrame): The processed beam schedule dataframe.
+
+    Returns:
+        bytes: The finalised excel spreadsheet in bytes.
+    """
     # Use BytesIO as an in-memory buffer
     output = io.BytesIO()
     # Create an Excel writer object with the BytesIO object
-    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:  # pyright: ignore abstract-class-instantiated
         # Write the entire DataFrame to the first sheet
         beam_schedule_df.to_excel(
             writer, sheet_name="Beam Reinforcement Schedule"
@@ -130,18 +180,6 @@ def export_file(beam_schedule_df: pd.DataFrame) -> bytes:
             group.to_excel(writer, sheet_name=sheet_name)
     # Return the Excel file content from the in-memory buffer
     return output.getvalue()
-
-
-def download_handler() -> None:
-    global processed_beam_schedule_df
-    # Call export_file to get the in-memory Excel file
-    excel_content = export_file(processed_beam_schedule_df)
-    # Write the content to a temporary file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
-        tmp.write(excel_content)
-        tmp_path = tmp.name  # Store the file path
-    # Initiate the download using the file path
-    ui.download(tmp_path, "beam_schedule.xlsx")
 
 
 if __name__ in {"__main__", "__mp_main__"}:

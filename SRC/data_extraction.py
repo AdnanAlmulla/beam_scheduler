@@ -4,13 +4,13 @@ This module provides functionality to read beam design data from Excel sheets
 and extract various parameters needed for beam analysis and design.
 """
 
-from typing import Any
+from typing import Any, BinaryIO
 
 import beam
 import pandas as pd
 
 
-def extract_data(excel_file: str) -> list[list[Any]]:
+def extract_data(excel_file: str | BinaryIO) -> list[list[Any]]:
     """Extracts beam data from an Excel file.
 
     This function reads beam design data from different sheets of an Excel file

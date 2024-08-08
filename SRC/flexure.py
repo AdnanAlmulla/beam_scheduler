@@ -242,7 +242,7 @@ Residual flexural rebar: {self.residual_rebar}"""
             "rebar_text": "Required rebar exceeds two layers. Please assess.",
             "provided_reinf": 0,
             "utilization": "-",
-            "diameter": [],
+            "diameter": [float("inf")],
             "solved": False,
         }
 

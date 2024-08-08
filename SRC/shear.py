@@ -186,9 +186,25 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
         """
         #! By writing this conditional, an overstressed condition in top or
         #! bottom flex reinforcement will not solve for shear reinforcement.
-        if not (
-            any(self.beam.flex_overstressed)
-            or any(self.beam.shear_overstressed)
+        if (
+            not (
+                any(self.beam.flex_overstressed)
+                or any(self.beam.shear_overstressed)
+            )
+            and all(
+                [
+                    self.flexure.top_flex_rebar["left"]["solved"],
+                    self.flexure.top_flex_rebar["middle"]["solved"],
+                    self.flexure.top_flex_rebar["right"]["solved"],
+                ]
+            )
+            and all(
+                [
+                    self.flexure.bot_flex_rebar["left"]["solved"],
+                    self.flexure.bot_flex_rebar["middle"]["solved"],
+                    self.flexure.bot_flex_rebar["right"]["solved"],
+                ]
+            )
         ):
 
             def get_min_diameter(rebar_dict: dict) -> int:
