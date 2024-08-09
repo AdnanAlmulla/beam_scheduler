@@ -24,7 +24,7 @@ Typical usage example:
 
 import itertools
 
-import beam
+from SRC import beam
 
 
 class Flexure:
@@ -304,17 +304,18 @@ Residual flexural rebar: {self.residual_rebar}"""
         bottom and subtracts them by their relevant required area.
         It then adds the remaining top and bottom residual together.
         """
-        for index, location in enumerate(self.residual_rebar):
-            top_residual = (
-                self.top_flex_rebar[location]["provided_reinf"]
-                - self.beam.req_top_flex_reinf[index]
-                if self.top_flex_rebar[location]["solved"]
-                else 0
-            )
-            bot_residual = (
-                self.bot_flex_rebar[location]["provided_reinf"]
-                - self.beam.req_bot_flex_reinf[index]
-                if self.bot_flex_rebar[location]["solved"]
-                else 0
-            )
-            self.residual_rebar[location] = top_residual + bot_residual
+        if self.beam.depth > 700:
+            for index, location in enumerate(self.residual_rebar):
+                top_residual = (
+                    self.top_flex_rebar[location]["provided_reinf"]
+                    - self.beam.req_top_flex_reinf[index]
+                    if self.top_flex_rebar[location]["solved"]
+                    else 0
+                )
+                bot_residual = (
+                    self.bot_flex_rebar[location]["provided_reinf"]
+                    - self.beam.req_bot_flex_reinf[index]
+                    if self.bot_flex_rebar[location]["solved"]
+                    else 0
+                )
+                self.residual_rebar[location] = top_residual + bot_residual

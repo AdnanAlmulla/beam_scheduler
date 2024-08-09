@@ -1,32 +1,24 @@
 """Main module for the Beam Scheduler application.
 
-This module serves as the entry point for the Beam Scheduler application. It handles
-the file upload process, data processing, and file download functionality. The module
-integrates with the user interface components defined in the beamscheduler_gui module
-and utilizes data extraction and processing functions from other modules.
+This module serves as the entry point for the Beam Scheduler application. It
+handles the file upload process, data processing, and file download
+functionality. The module integrates with the user interface components defined
+in the beamscheduler_gui module and utilizes data extraction and processing
+functions from other modules.
 
-The application allows users to upload an Excel spreadsheet containing beam data,
-processes this data to create a beam schedule, and provides the option to download
-the resulting schedule.
+The application allows users to upload an Excel spreadsheet containing beam
+data, processes this data to create a beam schedule, and provides the option to
+download the resulting schedule.
 
 Functions:
     main: Initialize the user interface and run the application.
-    excel_handler: Handle the uploaded Excel spreadsheet and initiate processing.
-    process_content: Process the uploaded spreadsheet data and create the beam schedule.
-    download_handler: Handle the download request for the processed beam schedule.
+    excel_handler: Handle the uploaded Excel spreadsheet and initiate
+    processing.
+    process_content: Process the uploaded spreadsheet data and create the beam
+    schedule.
+    download_handler: Handle the download request for the processed beam
+    schedule.
     export_file: Export the processed beam schedule to an Excel file.
-
-Note:
-    This module requires the following dependencies:
-    - asyncio
-    - io
-    - tempfile
-    - pandas
-    - nicegui
-    - Custom modules: beamscheduler_gui, data_extraction, data_processing
-
-The application adheres to ACI 318-19 standards for beam design and expects
-specific formatting in the input Excel spreadsheet.
 """
 
 import asyncio

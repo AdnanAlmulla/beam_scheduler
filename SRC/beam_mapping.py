@@ -47,10 +47,6 @@ def map_beam_attributes(
         "shear_links_left_string": ("Shear links", "Left (H)"),
         "shear_links_middle_string": ("Shear links", "Middle (J)"),
         "shear_links_right_string": ("Shear links", "Right (K)"),
-        "check_transverse_shear_spacing": (
-            "Check Transverse Shear Spacing?",
-            "",
-        ),
         "req_bot_flex_left": ("Flexural BL Criteria", "Required (mm^2)"),
         "prov_bot_flex_left": ("Flexural BL Criteria", "Provided (mm^2)"),
         "util_bot_flex_left": ("Flexural BL Criteria", "Utilization (%)"),

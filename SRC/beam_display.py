@@ -70,9 +70,6 @@ class BeamDisplayer:
         self.shear_links_right_string = (
             self.designed_beam.shear_design.shear_links["right"]["links_text"]
         )
-        self.check_transverse_shear_spacing = (
-            self.designed_beam.shear_design.check_transverse_shear_spacing
-        )
         self.req_bot_flex_left = self.designed_beam.beam.req_bot_flex_reinf[0]
         self.req_bot_flex_middle = self.designed_beam.beam.req_bot_flex_reinf[1]
         self.req_bot_flex_right = self.designed_beam.beam.req_bot_flex_reinf[2]

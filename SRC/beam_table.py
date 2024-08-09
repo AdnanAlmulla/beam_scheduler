@@ -36,7 +36,6 @@ def get_beam_table() -> pd.DataFrame:
             ("Shear links", "Left (H)"),
             ("Shear links", "Middle (J)"),
             ("Shear links", "Right (K)"),
-            ("Check Transverse Shear Spacing?", ""),
             ("Flexural BL Criteria", "Required (mm^2)"),
             ("Flexural BL Criteria", "Provided (mm^2)"),
             ("Flexural BL Criteria", "Utilization (%)"),

@@ -17,7 +17,6 @@ Typical usage example:
     flexure_design = flexure.Flexure(...)  # Create a Flexure object
     shear_design = Shear(beam_data, flexure_design)
     shear_design.get_shear_links_count()
-    shear_design.assess_transverse_shear_spacing()
     shear_design.get_total_shear_req()
     shear_design.get_min_shear_spacing()
     shear_design.get_shear_links()
@@ -25,9 +24,9 @@ Typical usage example:
 
 import itertools
 
-import beam
-import flexure
 import numpy as np
+
+from SRC import beam, flexure
 
 
 class Shear:
@@ -52,8 +51,6 @@ class Shear:
         shear_links (dict): Dictionary containing information about the
             provided shear reinforcement in the left, middle, and right
             sections of the beam.
-        check_transverse_shear_spacing (bool): Flag indicating if transverse
-            shear spacing is checked.
     """
 
     def __init__(self, beam: beam.Beam, flexure: flexure.Flexure) -> None:
@@ -96,7 +93,6 @@ class Shear:
                 "solved": False,
             },
         }
-        self.check_transverse_shear_spacing: bool = False
 
     def __repr__(self) -> str:
         """String representation of shear object.
@@ -105,8 +101,7 @@ class Shear:
             str: Shear object string.
         """
         return f"""Total required shear reinforcement: {self.total_req_shear},
-Shear links: {self.shear_links}, 
-Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
+Shear links: {self.shear_links}"""
 
     def get_shear_links_count(self) -> None:
         """Calculate the required shear legs.
@@ -115,7 +110,9 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
         stransverse shear spacing as required in Table 9.7.6.2.2. of ACI 318-19.
         """
         if True not in self.beam.shear_overstressed:
-            max_transverse_spacing = min(self.beam.eff_depth, 600)
+            max_transverse_spacing = min(
+                self._assess_transverse_shear_spacing()
+            )
             req_legs = (self.beam.width - 80) / max_transverse_spacing
             if req_legs < 2:
                 if self.flexure.flex_rebar_count == 2:
@@ -127,11 +124,15 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
             else:
                 self.shear_links_count = self.shear_links_count + [2, 3, 4]
 
-    def assess_transverse_shear_spacing(self) -> None:
+    def _assess_transverse_shear_spacing(self) -> list[int | float]:
         """Assess whether the transverse shear spacing requires to be checked.
 
         This method assesses if the required Vs is greater or less than the
         nominal concrete shear capacity as per Table 9.7.6.2.2 of ACI 318.19.
+
+        Returns:
+            list[int | float]: A list containing the effective depth per codal
+            requirements and the other minimum value.
         """
         # Get the maximum shear force from a list of the left, middle,
         # and right section of the beam.
@@ -156,9 +157,9 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
             * 10**-3
         )
         if nominal_shear_capacity >= required_vs:
-            self.check_transverse_shear_spacing = False
+            return [self.beam.eff_depth, 600]
         else:
-            self.check_transverse_shear_spacing = True
+            return [(self.beam.eff_depth / 2), 300]
 
     def get_total_shear_req(self) -> None:
         """Calculate the total required shear area.
@@ -367,7 +368,7 @@ Check transverse shear spacing: {self.check_transverse_shear_spacing}"""
         """Copy the highest reinforcement of either the left or right.
 
         Args:
-            shear_links (dict): The shear links dictionary
+            shear_links (dict): The shear links dictionary.
 
         Returns:
             dict: The updated shear links dictionary with both sides identical.

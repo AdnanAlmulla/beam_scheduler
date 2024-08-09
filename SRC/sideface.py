@@ -23,9 +23,7 @@ Typical usage example:
 
 import itertools
 
-import beam
-import flexure
-import shear
+from SRC import beam, flexure, shear
 
 
 class Sideface:
@@ -115,6 +113,11 @@ Sideface rebar: {self.sideface_rebar}"""
                     self.beam.req_torsion_flex_reinf[index]
                     - self.flexure.residual_rebar[location]
                 )
+            self.required_torsion_reinforcement = {
+                loc: 0
+                for loc, value in self.required_torsion_reinforcement.items()
+                if value < 0
+            }
 
     def get_sideface_clear_space(self) -> None:
         """Calculate the sideface clear face based on maximum beam diameters.
@@ -201,7 +204,7 @@ Sideface rebar: {self.sideface_rebar}"""
                 if excess_area < min_excess_area:
                     min_excess_area = excess_area
                     best_combination = {
-                        "rebar_text": f"T{diameter}@{spacing}EF",
+                        "rebar_text": f"T{diameter}@{spacing} EF",
                         "provided_reinf": round(provided),
                         "diameter": diameter,
                         "spacing": spacing,

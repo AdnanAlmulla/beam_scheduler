@@ -19,10 +19,7 @@ Typical usage example:
     design.calculate_sideface_design()
 """
 
-import beam
-import flexure
-import shear
-import sideface
+from SRC import beam, flexure, shear, sideface
 
 
 class BeamDesign:
@@ -77,19 +74,15 @@ class BeamDesign:
 
         The order of operations for calculating shear links are as
         follows:
-        1) The shear links count is calculated based on the allowable transverse
-        shear spacing.
-        2) A check is made to assess if the transverse shear spacing needs to be
-        assessed based on codal requirements.
-        3) Total shear requirement is calculated based on codal requirements.
-        4) The minimum longitudinal shear spacing is obtained based on codal
+        1) The shear links count is calculated based on the allowable codal
+        transverse shear spacing.
+        2) Total shear requirement is calculated based on codal requirements.
+        3) The minimum longitudinal shear spacing is obtained based on codal
         requirements.
-        5) The optimal shear links schedule is obtained.
+        4) The optimal shear links schedule is obtained.
         """
         # Calculate the required shear links count.
         self.shear_design.get_shear_links_count()
-        # Assess if transverse shear spacing needs to be checked.
-        self.shear_design.assess_transverse_shear_spacing()
         # Get the total required shear reinforcement.
         self.shear_design.get_total_shear_req()
         # Get the minimum codal longitudinal shear spacing.
