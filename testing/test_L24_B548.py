@@ -26,8 +26,8 @@ def example_beam() -> SRC.beam.Beam:
         span=5890,  # mm
         comp_conc_grade=45,  # MPa
         flex_overstressed=[False, False],  # pos, neg
-        req_top_flex_reinf=[1979, 703, 1979],  # left, middle, right
-        req_bot_flex_reinf=[1230, 1099, 1053],  # left, middle, right
+        req_top_flex_reinf=[14712, 6140, 3638],  # left, middle, right
+        req_bot_flex_reinf=[4584, 5415, 10007],  # left, middle, right
         req_torsion_flex_reinf=[6096, 6096, 6096],  # left, middle, right
         shear_force=[3195, 3169, 1997],  # left, middle, right
         shear_overstressed=[False, False],  # shear, torsion
@@ -94,10 +94,10 @@ def test_get_flex_top_req(example_beam: SRC.beam.Beam) -> None:
     flexural_design = SRC.flexure.Flexure(example_beam)
     flexural_design.flex_torsion_splitting()
     assert example_beam.req_top_flex_reinf == [
-        1979,
-        703,
-        1979,
-    ] and example_beam.req_torsion_flex_reinf == [0, 0, 0]
+        14712,
+        6140,
+        3638,
+    ] and example_beam.req_torsion_flex_reinf == [6096, 6096, 6096]
 
 
 def test_get_flex_bot_req(example_beam: SRC.beam.Beam) -> None:
@@ -109,10 +109,10 @@ def test_get_flex_bot_req(example_beam: SRC.beam.Beam) -> None:
     flexural_design = SRC.flexure.Flexure(example_beam)
     flexural_design.flex_torsion_splitting()
     assert example_beam.req_bot_flex_reinf == [
-        1230,
-        1099,
-        1053,
-    ] and example_beam.req_torsion_flex_reinf == [0, 0, 0]
+        4584,
+        5415,
+        10007,
+    ] and example_beam.req_torsion_flex_reinf == [6096, 6096, 6096]
 
 
 def test_top_flex_rebar_string(example_beam: SRC.beam.Beam) -> None:
@@ -126,10 +126,15 @@ def test_top_flex_rebar_string(example_beam: SRC.beam.Beam) -> None:
     flexural_design.flex_torsion_splitting()
     flexural_design.get_flex_rebar()
     flexural_design.assess_feasibility()
-    assert flexural_design.top_flex_rebar["left"]["rebar_text"] == "3T25 + 3T16"
-    assert flexural_design.top_flex_rebar["middle"]["rebar_text"] == "3T20"
     assert (
-        flexural_design.top_flex_rebar["right"]["rebar_text"] == "3T25 + 3T16"
+        flexural_design.top_flex_rebar["left"]["rebar_text"]
+        == "Required rebar exceeds two layers. Please assess."
+    )
+    assert (
+        flexural_design.top_flex_rebar["middle"]["rebar_text"] == "6T32 + 6T20"
+    )
+    assert (
+        flexural_design.top_flex_rebar["right"]["rebar_text"] == "6T20 + 6T20"
     )
 
 
@@ -144,12 +149,13 @@ def test_bot_flex_rebar_string(example_beam: SRC.beam.Beam) -> None:
     flexural_design.flex_torsion_splitting()
     flexural_design.get_flex_rebar()
     flexural_design.assess_feasibility()
-    assert flexural_design.bot_flex_rebar["left"]["rebar_text"] == "3T25"
+    assert flexural_design.bot_flex_rebar["left"]["rebar_text"] == "6T32"
     assert (
-        flexural_design.bot_flex_rebar["middle"]["rebar_text"] == "3T16 + 3T16"
+        flexural_design.bot_flex_rebar["middle"]["rebar_text"] == "6T25 + 6T25"
     )
     assert (
-        flexural_design.bot_flex_rebar["right"]["rebar_text"] == "3T16 + 3T16"
+        flexural_design.bot_flex_rebar["right"]["rebar_text"]
+        == "Required rebar exceeds two layers. Please assess."
     )
 
 
@@ -164,14 +170,12 @@ def test_top_flex_rebar_area(example_beam: SRC.beam.Beam) -> None:
     flexural_design.flex_torsion_splitting()
     flexural_design.get_flex_rebar()
     flexural_design.assess_feasibility()
-    assert flexural_design.top_flex_rebar["left"]["provided_reinf"] == approx(
-        2076
-    )
+    assert flexural_design.top_flex_rebar["left"]["provided_reinf"] == approx(0)
     assert flexural_design.top_flex_rebar["middle"]["provided_reinf"] == approx(
-        942
+        6710
     )
     assert flexural_design.top_flex_rebar["right"]["provided_reinf"] == approx(
-        2076
+        3770
     )
 
 
@@ -187,13 +191,13 @@ def test_bot_flex_rebar_area(example_beam: SRC.beam.Beam) -> None:
     flexural_design.get_flex_rebar()
     flexural_design.assess_feasibility()
     assert flexural_design.bot_flex_rebar["left"]["provided_reinf"] == approx(
-        1473
+        4825
     )
     assert flexural_design.bot_flex_rebar["middle"]["provided_reinf"] == approx(
-        1206
+        5890
     )
     assert flexural_design.bot_flex_rebar["right"]["provided_reinf"] == approx(
-        1206
+        0
     )
 
 
@@ -209,9 +213,9 @@ def test_residual_rebar(example_beam: SRC.beam.Beam) -> None:
     flexural_design.get_flex_rebar()
     flexural_design.assess_feasibility()
     flexural_design.get_residual_rebar()
-    assert flexural_design.residual_rebar["left"] == approx(340)
-    assert flexural_design.residual_rebar["middle"] == approx(346)
-    assert flexural_design.residual_rebar["right"] == approx(250)
+    assert flexural_design.residual_rebar["left"] == approx(0)
+    assert flexural_design.residual_rebar["middle"] == approx(0)
+    assert flexural_design.residual_rebar["right"] == approx(0)
 
 
 def test_total_shear_req(
@@ -225,7 +229,7 @@ def test_total_shear_req(
     """
     shear_design = SRC.shear.Shear(example_beam, example_flexure)
     shear_design.get_total_shear_req()
-    assert shear_design.total_req_shear == [0, 0, 0]
+    assert shear_design.total_req_shear == [6626, 5845, 3350]
 
 
 def test_shear_legs(
@@ -239,7 +243,7 @@ def test_shear_legs(
     """
     shear_design = SRC.shear.Shear(example_beam, example_flexure)
     shear_design.get_shear_links_count()
-    assert shear_design.shear_links_count == [2, 3]
+    assert shear_design.shear_links_count == [2, 3, 4]
 
 
 def test_min_shear_long_spacing(
@@ -253,7 +257,7 @@ def test_min_shear_long_spacing(
     """
     shear_design = SRC.shear.Shear(example_beam, example_flexure)
     shear_design.get_min_shear_spacing()
-    assert shear_design.shear_spacing == [125, 100]
+    assert shear_design.shear_spacing == [250, 200, 150, 125, 100]
     assert shear_design.shear_center_spacing == [250, 200, 150, 125, 100]
 
 
@@ -271,9 +275,9 @@ def test_get_shear_string(
     shear_design.get_shear_links_count()
     shear_design.get_min_shear_spacing()
     shear_design.get_shear_links()
-    assert shear_design.shear_links["left"]["links_text"] == "2L-T12@125"
-    assert shear_design.shear_links["middle"]["links_text"] == "2L-T12@250"
-    assert shear_design.shear_links["right"]["links_text"] == "2L-T12@125"
+    assert shear_design.shear_links["left"]["links_text"] == "-"
+    assert shear_design.shear_links["middle"]["links_text"] == "-"
+    assert shear_design.shear_links["right"]["links_text"] == "-"
 
 
 def test_shear_area(
@@ -290,9 +294,9 @@ def test_shear_area(
     shear_design.get_shear_links_count()
     shear_design.get_min_shear_spacing()
     shear_design.get_shear_links()
-    assert shear_design.shear_links["left"]["provided_reinf"] == approx(1810)
-    assert shear_design.shear_links["middle"]["provided_reinf"] == approx(905)
-    assert shear_design.shear_links["right"]["provided_reinf"] == approx(1810)
+    assert shear_design.shear_links["left"]["provided_reinf"] == approx(0)
+    assert shear_design.shear_links["middle"]["provided_reinf"] == approx(0)
+    assert shear_design.shear_links["right"]["provided_reinf"] == approx(0)
 
 
 def test_required_sideface_reinforcement(
@@ -332,7 +336,7 @@ def test_sideface_clear_space(
         example_beam, example_flexure, example_shear
     )
     sideface_design.get_sideface_clear_space()
-    assert sideface_design.sideface_clearspace == approx(526, 0.01)
+    assert sideface_design.sideface_clearspace == 0
 
 
 def test_sideface_string(
@@ -353,7 +357,7 @@ def test_sideface_string(
     sideface_design.get_required_reinforcement()
     sideface_design.get_sideface_clear_space()
     sideface_design.get_sideface_rebar()
-    assert sideface_design.sideface_rebar["rebar_text"] == "T16@250 EF"
+    assert sideface_design.sideface_rebar["rebar_text"] == "-"
 
 
 def test_sideface_area(
@@ -374,4 +378,4 @@ def test_sideface_area(
     sideface_design.get_required_reinforcement()
     sideface_design.get_sideface_clear_space()
     sideface_design.get_sideface_rebar()
-    assert sideface_design.sideface_rebar["provided_reinf"] == approx(846, 0.01)
+    assert sideface_design.sideface_rebar["provided_reinf"] == 0

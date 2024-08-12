@@ -23,7 +23,9 @@ Typical usage example:
 
 import itertools
 
-from SRC import beam, flexure, shear
+import beam
+import flexure
+import shear
 
 
 class Sideface:
@@ -173,8 +175,11 @@ Sideface rebar: {self.sideface_rebar}"""
         ):
             self.sideface_rebar = self._find_rebar_configuration(
                 max(
-                    self.required_torsion_reinforcement[location]
-                    for location in self.required_torsion_reinforcement
+                    (
+                        self.required_torsion_reinforcement[location]
+                        for location in self.required_torsion_reinforcement
+                    ),
+                    default=0,
                 )
             )
 

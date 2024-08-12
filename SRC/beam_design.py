@@ -19,7 +19,10 @@ Typical usage example:
     design.calculate_sideface_design()
 """
 
-from SRC import beam, flexure, shear, sideface
+import beam
+import flexure
+import shear
+import sideface
 
 
 class BeamDesign:

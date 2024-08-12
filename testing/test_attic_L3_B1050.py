@@ -1,4 +1,9 @@
-import pytest  # noqa: D100
+"""Edgecases: No shear/tors requirement, must provide minimum reinforcement.
+
+Also tests minimum sideface provided.
+"""
+
+import pytest
 from pytest import approx
 
 import SRC.beam
@@ -28,7 +33,7 @@ def example_beam() -> SRC.beam.Beam:
         req_bot_flex_reinf=[1230, 1099, 1053],  # left, middle, right
         req_torsion_flex_reinf=[0, 0, 0],  # left, middle, right
         shear_force=[237, 187, 216],  # left, middle, right
-        shear_overstressed=[False, False],
+        shear_overstressed=[False, False],  # shear, torsion
         req_shear_reinf=[0, 0, 0],  # left, middle, right
         req_torsion_reinf=[0, 0, 0],  # left, middle, right
     )

@@ -24,9 +24,9 @@ Typical usage example:
 
 import itertools
 
+import beam
+import flexure
 import numpy as np
-
-from SRC import beam, flexure
 
 
 class Shear:
@@ -187,25 +187,9 @@ Shear links: {self.shear_links}"""
         """
         #! By writing this conditional, an overstressed condition in top or
         #! bottom flex reinforcement will not solve for shear reinforcement.
-        if (
-            not (
-                any(self.beam.flex_overstressed)
-                or any(self.beam.shear_overstressed)
-            )
-            and all(
-                [
-                    self.flexure.top_flex_rebar["left"]["solved"],
-                    self.flexure.top_flex_rebar["middle"]["solved"],
-                    self.flexure.top_flex_rebar["right"]["solved"],
-                ]
-            )
-            and all(
-                [
-                    self.flexure.bot_flex_rebar["left"]["solved"],
-                    self.flexure.bot_flex_rebar["middle"]["solved"],
-                    self.flexure.bot_flex_rebar["right"]["solved"],
-                ]
-            )
+        if not (
+            any(self.beam.flex_overstressed)
+            or any(self.beam.shear_overstressed)
         ):
 
             def get_min_diameter(rebar_dict: dict) -> int:
@@ -303,6 +287,12 @@ Shear links: {self.shear_links}"""
                         "spacing": result["spacing"],
                         "solved": result["solved"],
                     }
+        elif (
+            len(self.beam.flex_overstressed) == 3
+            and self.beam.flex_overstressed[2] is True
+        ):
+            for location in self.shear_links:
+                self.shear_links[location]["links_text"] = "-"
         else:
             for location in self.shear_links:
                 self.shear_links[location]["links_text"] = "Overstressed"

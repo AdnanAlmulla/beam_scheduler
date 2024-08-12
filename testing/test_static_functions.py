@@ -1,6 +1,9 @@
+"""Test the static functions of the beam module."""
+
 import pytest
-from SRC.beam_calculator_class import Beam
 from pytest import approx
+
+import SRC.beam
 
 
 @pytest.mark.parametrize(
@@ -12,17 +15,14 @@ from pytest import approx
         ("B6000X600-C45/56", 6000),
     ],
 )
-def test_get_width(width: str, expected: int) -> int:
-    """This function tests the get width method from the Beam class.
+def test_get_width(width: str, expected: int) -> None:
+    """Test the get width method from the Beam class.
 
     Args:
         width (str): the width string obtained from ETABS.
         expected (int): the correct width in int dataform.
-
-    Returns:
-        int: the correct width in int dataform.
     """
-    assert Beam.get_width(width) == expected
+    assert SRC.beam.get_width(width) == expected
 
 
 @pytest.mark.parametrize(
@@ -34,17 +34,14 @@ def test_get_width(width: str, expected: int) -> int:
         ("B600X6000-C45/56", 6000),
     ],
 )
-def test_get_depth(depth: str, expected: int) -> int:
+def test_get_depth(depth: str, expected: int) -> None:
     """This function tests the get width method from the Beam class.
 
     Args:
         depth (str): the depth string obtained from ETABS.
         expected (int): the correct depth in int dataform.
-
-    Returns:
-        int: the correct depth in int dataform.
     """
-    assert Beam.get_depth(depth) == expected
+    assert SRC.beam.get_depth(depth) == expected
 
 
 @pytest.mark.parametrize(
@@ -56,8 +53,8 @@ def test_get_depth(depth: str, expected: int) -> int:
         ("B600X6000-C60/56", 60),
     ],
 )
-def test_get_conc_grade(section: str, expected: int) -> int:
-    """This function tests the get comp_conc_grade method from the Beam class.
+def test_get_conc_grade(section: str, expected: int) -> None:
+    """Test the get comp_conc_grade method from the Beam class.
 
     Args:
         section (str): The section defintion.
@@ -66,7 +63,7 @@ def test_get_conc_grade(section: str, expected: int) -> int:
     Returns:
         int: The cylinderical concrete grade.
     """
-    assert Beam.get_comp_conc_grade(section) == expected
+    assert SRC.beam.get_comp_conc_grade(section) == expected
 
 
 @pytest.mark.parametrize(
@@ -79,14 +76,11 @@ def test_get_conc_grade(section: str, expected: int) -> int:
         (32, approx(804.25, 0.001)),
     ],
 )
-def test_provided_reinforcement(diameter: int, expected: int) -> float:
-    """This function tests the provided reinforcement method from the Beam class.
+def test_provided_reinforcement(diameter: int, expected: int) -> None:
+    """Test the provided reinforcement method from the Beam class.
 
     Args:
         diameter (int): The diameter of rebar
         expected (int): The area of steel (mm^2)
-
-    Returns:
-        float: The area of steel (mm^2)
     """
-    assert Beam.provided_reinforcement(diameter) == expected
+    assert SRC.beam.provided_reinforcement(diameter) == expected

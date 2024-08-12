@@ -24,7 +24,7 @@ Typical usage example:
 
 import itertools
 
-from SRC import beam
+import beam
 
 
 class Flexure:
@@ -192,6 +192,16 @@ Residual flexural rebar: {self.residual_rebar}"""
                     "diameter": result["diameter"],
                     "solved": result["solved"],
                 }
+        if any(
+            self.top_flex_rebar[location]["rebar_text"]
+            == "Required rebar exceeds two layers. Please assess."
+            for location in self.top_flex_rebar
+        ) or any(
+            self.bot_flex_rebar[location]["rebar_text"]
+            == "Required rebar exceeds two layers. Please assess."
+            for location in self.bot_flex_rebar
+        ):
+            self.beam.flex_overstressed.append(True)
 
     def _find_rebar_configuration(self, requirement: int) -> dict:
         """Find the optimal rebar configuration for the required rebar area.
@@ -304,7 +314,7 @@ Residual flexural rebar: {self.residual_rebar}"""
         bottom and subtracts them by their relevant required area.
         It then adds the remaining top and bottom residual together.
         """
-        if self.beam.depth > 700:
+        if self.beam.depth > 700 and True not in self.beam.flex_overstressed:
             for index, location in enumerate(self.residual_rebar):
                 top_residual = (
                     self.top_flex_rebar[location]["provided_reinf"]
