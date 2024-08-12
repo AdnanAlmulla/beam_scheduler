@@ -164,7 +164,7 @@ Residual flexural rebar: {self.residual_rebar}"""
             locations, self.beam.req_top_flex_reinf
         ):
             # Index 0 is positive flexure, index 1 is negative flexure.
-            if self.beam.flex_overstressed[1] is True:
+            if any(self.beam.flex_overstressed):
                 self.top_flex_rebar[location]["rebar_text"] = "Overstressed"
             else:
                 result = self._find_rebar_configuration(requirement)
@@ -181,7 +181,7 @@ Residual flexural rebar: {self.residual_rebar}"""
             locations, self.beam.req_bot_flex_reinf
         ):
             # Index 0 is positive flexure, index 1 is negative flexure.
-            if self.beam.flex_overstressed[0] is True:
+            if any(self.beam.flex_overstressed):
                 self.bot_flex_rebar[location]["rebar_text"] = "Overstressed"
             else:
                 result = self._find_rebar_configuration(requirement)

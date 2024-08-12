@@ -1,4 +1,4 @@
-import sys
+import sys  # noqa: D100
 from pathlib import Path
 
 # Get the project root directory
