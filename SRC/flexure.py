@@ -260,7 +260,7 @@ Residual flexural rebar: {self.residual_rebar}"""
         """Determine the feasibility of flexure schedule based on beam span.
 
         This method determines the feasibility of the beam flexural rebar based
-        on its span. Beams with a span of 3 metres or less will have its
+        on its span. Beams with a span of 6 metres or less will have its
         reinforcement continous based on the highest provided value.
         """
         # Process top flexural reinforcement:
@@ -269,7 +269,7 @@ Residual flexural rebar: {self.residual_rebar}"""
         # Index 0 of this list is positive flexure, index 1 is negative flexure.
         if (
             self.beam.flex_overstressed[1] is not True
-            and self.beam.span <= 3000
+            and self.beam.span <= 6000
         ):
             for location, properties in self.top_flex_rebar.items():
                 if (
@@ -292,7 +292,7 @@ Residual flexural rebar: {self.residual_rebar}"""
         # Index 0 of this list is positive flexure, index 1 is negative flexure.
         if (
             self.beam.flex_overstressed[0] is not True
-            and self.beam.span <= 3000
+            and self.beam.span <= 6000
         ):
             for location, properties in self.bot_flex_rebar.items():
                 if (

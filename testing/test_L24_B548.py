@@ -134,7 +134,7 @@ def test_top_flex_rebar_string(example_beam: SRC.beam.Beam) -> None:
         flexural_design.top_flex_rebar["middle"]["rebar_text"] == "6T32 + 6T20"
     )
     assert (
-        flexural_design.top_flex_rebar["right"]["rebar_text"] == "6T20 + 6T20"
+        flexural_design.top_flex_rebar["right"]["rebar_text"] == "6T32 + 6T20"
     )
 
 
@@ -149,7 +149,7 @@ def test_bot_flex_rebar_string(example_beam: SRC.beam.Beam) -> None:
     flexural_design.flex_torsion_splitting()
     flexural_design.get_flex_rebar()
     flexural_design.assess_feasibility()
-    assert flexural_design.bot_flex_rebar["left"]["rebar_text"] == "6T32"
+    assert flexural_design.bot_flex_rebar["left"]["rebar_text"] == "6T25 + 6T25"
     assert (
         flexural_design.bot_flex_rebar["middle"]["rebar_text"] == "6T25 + 6T25"
     )
@@ -175,7 +175,7 @@ def test_top_flex_rebar_area(example_beam: SRC.beam.Beam) -> None:
         6710
     )
     assert flexural_design.top_flex_rebar["right"]["provided_reinf"] == approx(
-        3770
+        6710
     )
 
 
@@ -191,7 +191,7 @@ def test_bot_flex_rebar_area(example_beam: SRC.beam.Beam) -> None:
     flexural_design.get_flex_rebar()
     flexural_design.assess_feasibility()
     assert flexural_design.bot_flex_rebar["left"]["provided_reinf"] == approx(
-        4825
+        5890
     )
     assert flexural_design.bot_flex_rebar["middle"]["provided_reinf"] == approx(
         5890

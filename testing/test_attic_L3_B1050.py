@@ -335,7 +335,7 @@ def test_sideface_clear_space(
         example_beam, example_flexure, example_shear
     )
     sideface_design.get_sideface_clear_space()
-    assert sideface_design.sideface_clearspace == approx(526, 0.01)
+    assert sideface_design.sideface_clearspace == approx(527)
 
 
 def test_sideface_string(
