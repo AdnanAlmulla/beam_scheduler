@@ -5,9 +5,6 @@ from pytest import approx
 
 import SRC.beam
 import SRC.beam_design
-import SRC.flexure
-import SRC.shear
-import SRC.sideface
 
 
 @pytest.fixture
@@ -115,7 +112,7 @@ def test_top_flex_rebar_string(
 def test_bot_flex_rebar_string(
     designed_beam: SRC.beam_design.BeamDesign,
 ) -> None:
-    """CCheck that the bottom flexural rebar matches what is expected.
+    """Check that the bottom flexural rebar matches what is expected.
 
     Args:
         designed_beam (SRC.beam_design.BeamDesign): Refer to example.
