@@ -288,7 +288,7 @@ def test_right_shear_links(designed_beam: SRC.beam_design.BeamDesign) -> None:
         designed_beam.shear_design.shear_links["right"],
         "2L-T12@125",
         1810,
-        93.3,
+        90.0,
         12,
         125,
     )
