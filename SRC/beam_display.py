@@ -76,6 +76,7 @@ class BeamDisplayer:
         self.req_top_flex_left = self.designed_beam.beam.req_top_flex_reinf[0]
         self.req_top_flex_middle = self.designed_beam.beam.req_top_flex_reinf[1]
         self.req_top_flex_right = self.designed_beam.beam.req_top_flex_reinf[2]
+        self.req_sideface = self.designed_beam.sideface_design.total_required_torsion_reinforcement  # noqa: E501
         self.req_shear_left = self.designed_beam.shear_design.total_req_shear[0]
         self.req_shear_middle = self.designed_beam.shear_design.total_req_shear[
             1
@@ -113,6 +114,9 @@ class BeamDisplayer:
                 "provided_reinf"
             ]
         )
+        self.prov_sideface = self.designed_beam.sideface_design.sideface_rebar[
+            "provided_reinf"
+        ]
         self.prov_shear_left = self.designed_beam.shear_design.shear_links[
             "left"
         ]["provided_reinf"]
@@ -152,6 +156,9 @@ class BeamDisplayer:
                 "utilization"
             ]
         )
+        self.util_sideface = self.designed_beam.sideface_design.sideface_rebar[
+            "utilization"
+        ]
         self.util_shear_left = self.designed_beam.shear_design.shear_links[
             "left"
         ]["utilization"]

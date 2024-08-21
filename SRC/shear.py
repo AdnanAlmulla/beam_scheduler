@@ -366,6 +366,22 @@ Shear links: {self.shear_links}"""
         left, right = shear_links["left"], shear_links["right"]
         max_side = max([left, right], key=lambda x: x["provided_reinf"])
         min_side = left if max_side == right else right
-
-        min_side.update(max_side)
+        min_side.update(
+            {
+                "links_text": max_side["links_text"],
+                "provided_reinf": max_side["provided_reinf"],
+                "diameter": max_side["diameter"],
+                "spacing": max_side["spacing"],
+                "solved": max_side["solved"],
+            }
+        )
+        # Calculate and assign individual utilization:
+        req_reinf = (
+            self.total_req_shear[0]
+            if min_side == left
+            else self.total_req_shear[2]
+        )
+        provided_reinf = min_side["provided_reinf"]
+        utilization = round((req_reinf / provided_reinf) * 100, 1)
+        min_side["utilization"] = utilization
         return shear_links

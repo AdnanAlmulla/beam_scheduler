@@ -73,9 +73,11 @@ class Sideface:
             "middle": 0,
             "right": 0,
         }
+        self.total_required_torsion_reinforcement: float = 0
         self.sideface_rebar: dict = {
             "rebar_text": "-",
             "provided_reinf": 0,
+            "utilization": "-",
             "diameter": 0,
             "spacing": 0,
             "solved": False,
@@ -87,9 +89,9 @@ class Sideface:
         Returns:
             str: Sideface object string.
         """
-        return f"""Req tor reinforcement: {self.required_torsion_reinforcement},
+        return f"""Req tor reinforcement: {self.total_required_torsion_reinforcement},
 Sideface clearspace: {self.sideface_clearspace},
-Sideface rebar: {self.sideface_rebar}"""
+Sideface rebar: {self.sideface_rebar}"""  # noqa: E501
 
     def get_required_reinforcement(self) -> None:
         """Calculate the required flexural torsion reinforcement.
@@ -115,11 +117,11 @@ Sideface rebar: {self.sideface_rebar}"""
                     self.beam.req_torsion_flex_reinf[index]
                     - self.flexure.residual_rebar[location]
                 )
-            self.required_torsion_reinforcement = {
-                loc: 0
-                for loc, value in self.required_torsion_reinforcement.items()
-                if value < 0
-            }
+                if self.required_torsion_reinforcement[location] < 0:
+                    self.required_torsion_reinforcement[location] = 0
+            self.total_required_torsion_reinforcement = max(
+                self.required_torsion_reinforcement.values(), default=0
+            )
 
     def get_sideface_clear_space(self) -> None:
         """Calculate the sideface clear face based on maximum beam diameters.
@@ -174,16 +176,10 @@ Sideface rebar: {self.sideface_rebar}"""
             and self.beam.depth > 700
         ):
             self.sideface_rebar = self._find_rebar_configuration(
-                max(
-                    (
-                        self.required_torsion_reinforcement[location]
-                        for location in self.required_torsion_reinforcement
-                    ),
-                    default=0,
-                )
+                self.total_required_torsion_reinforcement
             )
 
-    def _find_rebar_configuration(self, requirement: int) -> dict:
+    def _find_rebar_configuration(self, requirement: float) -> dict:
         """Find the optimal sideface configuration for the required rebar area.
 
         Args:
@@ -211,6 +207,7 @@ Sideface rebar: {self.sideface_rebar}"""
                     best_combination = {
                         "rebar_text": f"T{diameter}@{spacing} EF",
                         "provided_reinf": round(provided),
+                        "utilization": round((requirement / provided) * 100, 1),
                         "diameter": diameter,
                         "spacing": spacing,
                         "solved": True,
@@ -221,6 +218,7 @@ Sideface rebar: {self.sideface_rebar}"""
             best_combination = {
                 "rebar_text": "Cannot satisfy requirement. Please reassess.",
                 "provided_reinf": 0,
+                "utilization": "-",
                 "diameter": 0,
                 "spacing": 0,
                 "solved": False,
