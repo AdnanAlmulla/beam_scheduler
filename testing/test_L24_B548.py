@@ -95,16 +95,8 @@ def test_get_flex_req(designed_beam: SRC.beam_design.BeamDesign) -> None:
     Args:
         designed_beam (SRC.beam_design.BeamDesign): Refer to example.
     """
-    assert designed_beam.beam.req_top_flex_reinf == [
-        14712,
-        6140,
-        3638,
-    ]
-    assert designed_beam.beam.req_bot_flex_reinf == [
-        4584,
-        5415,
-        10007,
-    ]
+    assert designed_beam.beam.req_top_flex_reinf == [14712, 6140, 3638]
+    assert designed_beam.beam.req_bot_flex_reinf == [4584, 5415, 10007]
     assert designed_beam.beam.req_torsion_flex_reinf == [6096, 6096, 6096]
 
 
