@@ -43,17 +43,12 @@ def process_data(beam_parameters: list[list[Any]]) -> pd.DataFrame:
         return [beam.Beam(*args) for args in zip(*data)]
 
     beam_instances = create_beam_instances(beam_parameters)
-    # List to hold all the designed beams.
     designed_beams = []
     # Loop through beam instances and undertake beam design.
     for beams in beam_instances:
-        # Instantiate the Beam Design object.
         beam_design_instance = beam_design.BeamDesign(beams)
-        # Undertake the process of flexural design.
         beam_design_instance.calculate_flexural_design()
-        # Undertake the process of shear design.
         beam_design_instance.calculate_shear_design()
-        # Undertake the process of sideface design.
         beam_design_instance.calculate_sideface_design()
         # Append all the designed beams to the designed beams list.
         designed_beams.append(beam_design_instance)

@@ -252,7 +252,6 @@ Residual flexural rebar: {self.residual_rebar}"""
             "rebar_text": "Required rebar exceeds two layers. Please assess.",
             "provided_reinf": 0,
             "utilization": "-",
-            #! Why does this need to be float("inf")??
             "diameter": [float("inf")],
             "solved": False,
         }
