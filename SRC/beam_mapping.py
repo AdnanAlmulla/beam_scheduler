@@ -5,6 +5,7 @@ instances to a structured DataFrame, facilitating the creation of beam
 schedules or reports.
 """
 
+import beam_design
 import beam_display
 import pandas as pd
 
@@ -83,6 +84,37 @@ def map_beam_attributes(
     for idx, beams in enumerate(beam_instances):
         for attr, col in beam_mapping.items():
             value = getattr(beams, attr)
+            if isinstance(value, str):
+                dataframe[col] = dataframe[col].astype(object)
+            dataframe.loc[idx, col] = value
+    return dataframe
+
+
+def map_quantities_attributes(
+    beam_instances: list[beam_design.BeamQuantities], dataframe: pd.DataFrame
+) -> pd.DataFrame:
+    quantities_mapping = {
+        "storey": "Storey",
+        "etabs_id": "Etabs ID",
+        "span": "Span (mm)",
+        "width": "Width (mm)",
+        "depth": "Depth (mm)",
+        "conc_area": "Concrete Area (m^2)",
+        "conc_volume": "Concrete Volume (m^3)",
+        "flex_area": "Flexural Rebar Area (m^2)",
+        "flex_volume": "Flexural Rebar Volume (m^3)",
+        "shear_area": "Shear Rebar Area (m^2)",
+        "shear_volume": "Shear Rebar Volume (m^3)",
+        "sideface_area": "Sideface Rebar Area (m^2)",
+        "sideface_volume": "Sideface Rebar Volume (m^3)",
+        "total_rebar_area": "Total Rebar Area (m^2)",
+        "total_rebar_volume": "Total Rebar Volume (m^3)",
+    }
+    # Loop through all the beam instances and populate the beam schedule
+    # dataframe with relevant information.
+    for idx, quantities in enumerate(beam_instances):
+        for attr, col in quantities_mapping.items():
+            value = getattr(quantities, attr)
             if isinstance(value, str):
                 dataframe[col] = dataframe[col].astype(object)
             dataframe.loc[idx, col] = value

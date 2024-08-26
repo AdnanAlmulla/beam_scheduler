@@ -41,9 +41,11 @@ class BeamDesign:
             beam (beam): Beam dataclass object.
         """
         self.beam = beam
-        self.flexural_design = flexure.Flexure(self.beam)
-        self.shear_design = shear.Shear(self.beam, self.flexural_design)
-        self.sideface_design = sideface.Sideface(
+        self.flexural_design: flexure.Flexure = flexure.Flexure(self.beam)
+        self.shear_design: shear.Shear = shear.Shear(
+            self.beam, self.flexural_design
+        )
+        self.sideface_design: sideface.Sideface = sideface.Sideface(
             self.beam, self.flexural_design, self.shear_design
         )
 
@@ -109,3 +111,101 @@ class BeamDesign:
         self.sideface_design.get_sideface_clear_space()
         # Obtain the sideface reinforcement.
         self.sideface_design.get_sideface_rebar()
+
+
+class BeamQuantities:
+    def __init__(self, designed_beam: BeamDesign) -> None:
+        self.designed_beam: BeamDesign = designed_beam
+        self.storey: str = self.designed_beam.beam.storey
+        self.etabs_id: str = self.designed_beam.beam.etabs_id
+        self.span: float = self.designed_beam.beam.span
+        self.width: float = self.designed_beam.beam.width
+        self.depth: float = self.designed_beam.beam.depth
+
+    @property
+    def conc_area(self) -> float:
+        return (self.width * self.depth) * 10**-6
+
+    @property
+    def conc_volume(self) -> float:
+        return (self.conc_area * self.span) * 10**-3
+
+    @property
+    def flex_area(self) -> float:
+        return (
+            self.designed_beam.flexural_design.top_flex_rebar["left"][
+                "provided_reinf"
+            ]
+            + self.designed_beam.flexural_design.top_flex_rebar["middle"][
+                "provided_reinf"
+            ]
+            + self.designed_beam.flexural_design.top_flex_rebar["right"][
+                "provided_reinf"
+            ]
+            + self.designed_beam.flexural_design.bot_flex_rebar["left"][
+                "provided_reinf"
+            ]
+            + self.designed_beam.flexural_design.bot_flex_rebar["middle"][
+                "provided_reinf"
+            ]
+            + self.designed_beam.flexural_design.bot_flex_rebar["right"][
+                "provided_reinf"
+            ]
+        ) * 10**-6
+
+    @property
+    def flex_volume(self) -> float:
+        return (self.flex_area * self.span) * 10**-3
+
+    @property
+    def shear_area(self) -> float:
+        return (
+            self.designed_beam.shear_design.shear_links["left"][
+                "provided_reinf"
+            ]
+            + self.designed_beam.shear_design.shear_links["middle"][
+                "provided_reinf"
+            ]
+            + self.designed_beam.shear_design.shear_links["right"][
+                "provided_reinf"
+            ]
+        ) * 10**-6
+
+    @property
+    def shear_volume(self) -> float:
+        try:
+            return (
+                self.designed_beam.shear_design.shear_links["left"][
+                    "provided_reinf"
+                ]
+                * (self.span / 1000)
+                + self.designed_beam.shear_design.shear_links["middle"][
+                    "provided_reinf"
+                ]
+                * (self.span / 1000)
+                + self.designed_beam.shear_design.shear_links["right"][
+                    "provided_reinf"
+                ]
+                * (self.span / 1000)
+            ) * 10**-6
+        except ZeroDivisionError:
+            return 0
+
+    @property
+    def sideface_area(self) -> float:
+        return (
+            self.designed_beam.sideface_design.sideface_rebar["provided_reinf"]
+            * 10**-6
+        )
+
+    @property
+    def sideface_volume(self) -> float:
+        return (self.sideface_area * self.span) * 10**-3
+
+    @property
+    def total_rebar_area(self) -> float:
+        return self.flex_area + self.shear_area + self.sideface_area
+
+    @property
+    def total_rebar_volume(self) -> float:
+        return self.flex_volume + self.shear_volume + self.sideface_volume
