@@ -163,7 +163,7 @@ class BeamQuantities:
         Returns:
             The concrete volume in cubic meters.
         """
-        return (self.conc_area * self.span) * 10**-3
+        return round((self.conc_area * self.span) * 10**-3, 3)
 
     @property
     def flex_area(self) -> float:
@@ -172,26 +172,30 @@ class BeamQuantities:
         Returns:
             The total flexural reinforcement area in square meters.
         """
-        return (
-            self.designed_beam.flexural_design.top_flex_rebar["left"][
-                "provided_reinf"
-            ]
-            + self.designed_beam.flexural_design.top_flex_rebar["middle"][
-                "provided_reinf"
-            ]
-            + self.designed_beam.flexural_design.top_flex_rebar["right"][
-                "provided_reinf"
-            ]
-            + self.designed_beam.flexural_design.bot_flex_rebar["left"][
-                "provided_reinf"
-            ]
-            + self.designed_beam.flexural_design.bot_flex_rebar["middle"][
-                "provided_reinf"
-            ]
-            + self.designed_beam.flexural_design.bot_flex_rebar["right"][
-                "provided_reinf"
-            ]
-        ) * 10**-6
+        return round(
+            (
+                self.designed_beam.flexural_design.top_flex_rebar["left"][
+                    "provided_reinf"
+                ]
+                + self.designed_beam.flexural_design.top_flex_rebar["middle"][
+                    "provided_reinf"
+                ]
+                + self.designed_beam.flexural_design.top_flex_rebar["right"][
+                    "provided_reinf"
+                ]
+                + self.designed_beam.flexural_design.bot_flex_rebar["left"][
+                    "provided_reinf"
+                ]
+                + self.designed_beam.flexural_design.bot_flex_rebar["middle"][
+                    "provided_reinf"
+                ]
+                + self.designed_beam.flexural_design.bot_flex_rebar["right"][
+                    "provided_reinf"
+                ]
+            )
+            * 10**-6,
+            3,
+        )
 
     @property
     def flex_volume(self) -> float:
@@ -200,8 +204,9 @@ class BeamQuantities:
         Returns:
             The total flexural reinforcement volume in cubic meters.
         """
-        return (self.flex_area * self.span) * 10**-3
+        return round((self.flex_area * self.span) * 10**-3, 3)
 
+    # TODO: Correct shear area.
     @property
     def shear_area(self) -> float:
         """Calculate the total shear reinforcement area.
@@ -209,18 +214,23 @@ class BeamQuantities:
         Returns:
             The total shear reinforcement area in square meters.
         """
-        return (
-            self.designed_beam.shear_design.shear_links["left"][
-                "provided_reinf"
-            ]
-            + self.designed_beam.shear_design.shear_links["middle"][
-                "provided_reinf"
-            ]
-            + self.designed_beam.shear_design.shear_links["right"][
-                "provided_reinf"
-            ]
-        ) * 10**-6
+        return round(
+            (
+                self.designed_beam.shear_design.shear_links["left"][
+                    "provided_reinf"
+                ]
+                + self.designed_beam.shear_design.shear_links["middle"][
+                    "provided_reinf"
+                ]
+                + self.designed_beam.shear_design.shear_links["right"][
+                    "provided_reinf"
+                ]
+            )
+            * 10**-6,
+            3,
+        )
 
+    # TODO: Correct shear volume.
     @property
     def shear_volume(self) -> float:
         """Calculate the total shear reinforcement volume.
@@ -229,20 +239,24 @@ class BeamQuantities:
             The total shear reinforcement volume in cubic meters.
         """
         try:
-            return (
-                self.designed_beam.shear_design.shear_links["left"][
-                    "provided_reinf"
-                ]
-                * (self.span / 1000)
-                + self.designed_beam.shear_design.shear_links["middle"][
-                    "provided_reinf"
-                ]
-                * (self.span / 1000)
-                + self.designed_beam.shear_design.shear_links["right"][
-                    "provided_reinf"
-                ]
-                * (self.span / 1000)
-            ) * 10**-6
+            return round(
+                (
+                    self.designed_beam.shear_design.shear_links["left"][
+                        "provided_reinf"
+                    ]
+                    * (self.span / 1000)
+                    + self.designed_beam.shear_design.shear_links["middle"][
+                        "provided_reinf"
+                    ]
+                    * (self.span / 1000)
+                    + self.designed_beam.shear_design.shear_links["right"][
+                        "provided_reinf"
+                    ]
+                    * (self.span / 1000)
+                )
+                * 10**-6,
+                3,
+            )
         except ZeroDivisionError:
             return 0
 
@@ -265,7 +279,7 @@ class BeamQuantities:
         Returns:
             The total sideface reinforcement volume in cubic meters.
         """
-        return (self.sideface_area * self.span) * 10**-3
+        return round((self.sideface_area * self.span) * 10**-3, 3)
 
     @property
     def total_rebar_area(self) -> float:
@@ -274,7 +288,7 @@ class BeamQuantities:
         Returns:
             The total reinforcement area in square meters.
         """
-        return self.flex_area + self.shear_area + self.sideface_area
+        return round(self.flex_area + self.shear_area + self.sideface_area, 3)
 
     @property
     def total_rebar_volume(self) -> float:
@@ -283,4 +297,6 @@ class BeamQuantities:
         Returns:
             The total reinforcement volume in cubic meters.
         """
-        return self.flex_volume + self.shear_volume + self.sideface_volume
+        return round(
+            self.flex_volume + self.shear_volume + self.sideface_volume, 3
+        )
