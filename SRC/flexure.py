@@ -192,13 +192,16 @@ Residual flexural rebar: {self.residual_rebar}"""
                     "diameter": result["diameter"],
                     "solved": result["solved"],
                 }
+        # A scenario where the rebar cannot be solved should be considered as a
+        # 'failure', so we append True to flex overstressed. This causes shear
+        # and sideface reinforcement to not be solved.
         if any(
             self.top_flex_rebar[location]["rebar_text"]
-            == "Required rebar exceeds two layers. Please assess."
+            == "Required rebar exceeds four layers."
             for location in self.top_flex_rebar
         ) or any(
             self.bot_flex_rebar[location]["rebar_text"]
-            == "Required rebar exceeds two layers. Please assess."
+            == "Required rebar exceeds four layers."
             for location in self.bot_flex_rebar
         ):
             self.beam.flex_overstressed.append(True)
@@ -213,23 +216,44 @@ Residual flexural rebar: {self.residual_rebar}"""
             dict: Returns the rebar text, provided reinforcement area, diameter
             of each layer, and whether the beam object was solved or not.
         """
-        best_combination = None
-        min_excess_area = float("inf")
-        # Consider all combinations of one and two layers
-        all_combinations = [
-            (diameter,) for diameter in self.flex_rebar_dia
-        ] + list(itertools.product(self.flex_rebar_dia, repeat=2))
-        for combination in all_combinations:
-            provided = sum(
-                beam.provided_reinforcement(diameter) * self.flex_rebar_count
-                for diameter in combination
-            )
-            if provided >= requirement:
-                excess_area = provided - requirement
-                if excess_area < min_excess_area:
-                    min_excess_area = excess_area
-                    best_combination = combination
 
+        def get_combinations(n_layers: int) -> list[tuple[int, ...]]:
+            return [(diameter,) for diameter in self.flex_rebar_dia] + list(
+                itertools.product(self.flex_rebar_dia, repeat=n_layers)
+            )
+
+        def get_best_combination(
+            combinations: list[tuple[int, ...]],
+        ) -> tuple[int, ...] | None:
+            best_combination = None
+            min_excess_area = float("inf")
+            for combination in combinations:
+                provided = sum(
+                    beam.provided_reinforcement(diameter)
+                    * self.flex_rebar_count
+                    for diameter in combination
+                )
+                if provided >= requirement:
+                    excess_area = provided - requirement
+                    if excess_area < min_excess_area:
+                        min_excess_area = excess_area
+                        best_combination = combination
+            if not best_combination:
+                return best_combination
+            else:
+                return best_combination
+
+        # Consider all combinations of two layers.
+        all_combinations = get_combinations(2)
+        best_combination = get_best_combination(all_combinations)
+        # Consider all combinations of three layers if the above isn't met.
+        if not best_combination:
+            all_combinations = get_combinations(3)
+            best_combination = get_best_combination(all_combinations)
+        # Consider all combinations of four layers if the above isn't met.
+        if not best_combination:
+            all_combinations = get_combinations(4)
+            best_combination = get_best_combination(all_combinations)
         if best_combination:
             sorted_combination = sorted(best_combination, reverse=True)
             rebar_text = " + ".join(
@@ -249,7 +273,7 @@ Residual flexural rebar: {self.residual_rebar}"""
                 "solved": True,
             }
         return {
-            "rebar_text": "Required rebar exceeds two layers. Please assess.",
+            "rebar_text": "Required rebar exceeds four layers.",
             "provided_reinf": 0,
             "utilization": "-",
             "diameter": [float("inf")],

@@ -24,8 +24,8 @@ def example_beam() -> SRC.beam.Beam:
         span=5890,  # mm
         comp_conc_grade=45,  # MPa
         flex_overstressed=[False, False],  # pos, neg
-        req_top_flex_reinf=[14712, 6140, 3638],  # left, middle, right
-        req_bot_flex_reinf=[4584, 5415, 10007],  # left, middle, right
+        req_top_flex_reinf=[30000, 6140, 3638],  # left, middle, right
+        req_bot_flex_reinf=[4584, 5415, 30000],  # left, middle, right
         req_torsion_flex_reinf=[6096, 6096, 6096],  # left, middle, right
         shear_force=[3195, 3169, 1997],  # left, middle, right
         shear_overstressed=[False, False],  # shear, torsion
@@ -131,8 +131,8 @@ def test_get_flex_req(designed_beam: SRC.beam_design.BeamDesign) -> None:
     Args:
         designed_beam (SRC.beam_design.BeamDesign): Refer to example.
     """
-    assert designed_beam.beam.req_top_flex_reinf == [14712, 6140, 3638]
-    assert designed_beam.beam.req_bot_flex_reinf == [4584, 5415, 10007]
+    assert designed_beam.beam.req_top_flex_reinf == [30000, 6140, 3638]
+    assert designed_beam.beam.req_bot_flex_reinf == [4584, 5415, 30000]
     assert designed_beam.beam.req_torsion_flex_reinf == [6096, 6096, 6096]
 
 
@@ -144,7 +144,7 @@ def test_top_left_flex_rebar(designed_beam: SRC.beam_design.BeamDesign) -> None:
     """
     _assert_flex_rebar(
         designed_beam.flexural_design.top_flex_rebar["left"],
-        "Required rebar exceeds two layers. Please assess.",
+        "Required rebar exceeds four layers.",
         0,
         "-",
         [float("inf")],
@@ -227,7 +227,7 @@ def test_bot_right_flex_rebar(
     """
     _assert_flex_rebar(
         designed_beam.flexural_design.bot_flex_rebar["right"],
-        "Required rebar exceeds two layers. Please assess.",
+        "Required rebar exceeds four layers.",
         0,
         "-",
         [float("inf")],
