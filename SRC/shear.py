@@ -167,10 +167,7 @@ Shear links: {self.shear_links}"""
         Call the required shear and torsion reinforcement attributes and
         calculate the total shear reinforcement required.
         """
-        if True in self.beam.shear_overstressed:
-            for properties in self.shear_links.values():
-                properties["links_text"] = "Overstressed"
-        else:
+        if True not in self.beam.shear_overstressed:
             self.total_req_shear = [
                 round(a + 2 * b)
                 for a, b in zip(
@@ -271,8 +268,6 @@ Shear links: {self.shear_links}"""
                         "spacing": result["spacing"],
                         "solved": result["solved"],
                     }
-                    # Copy the highest provided to the left or right.
-                    self._copy_highest_provided(self.shear_links)
                 else:
                     result = self._find_links_configuration(
                         requirement,
@@ -287,6 +282,8 @@ Shear links: {self.shear_links}"""
                         "spacing": result["spacing"],
                         "solved": result["solved"],
                     }
+            # Copy the highest provided to the left or right.
+            self._copy_highest_provided(self.shear_links)
         elif (
             len(self.beam.flex_overstressed) == 3
             and self.beam.flex_overstressed[2] is True
@@ -345,7 +342,7 @@ Shear links: {self.shear_links}"""
             return best_combination
         else:
             best_combination = {
-                "links_text": "Cannot satisfy requirement. Please reassess",
+                "links_text": "Cannot satisfy requirement.",
                 "provided_reinf": 0,
                 "utilization": "-",
                 "diameter": 0,
@@ -354,7 +351,7 @@ Shear links: {self.shear_links}"""
             }
             return best_combination
 
-    def _copy_highest_provided(self, shear_links: dict) -> dict:
+    def _copy_highest_provided(self, shear_links: dict) -> dict | None:
         """Copy the highest reinforcement of either the left or right.
 
         Args:
@@ -363,25 +360,29 @@ Shear links: {self.shear_links}"""
         Returns:
             dict: The updated shear links dictionary with both sides identical.
         """
-        left, right = shear_links["left"], shear_links["right"]
-        max_side = max([left, right], key=lambda x: x["provided_reinf"])
-        min_side = left if max_side == right else right
-        min_side.update(
-            {
-                "links_text": max_side["links_text"],
-                "provided_reinf": max_side["provided_reinf"],
-                "diameter": max_side["diameter"],
-                "spacing": max_side["spacing"],
-                "solved": max_side["solved"],
-            }
-        )
-        # Calculate and assign individual utilization:
-        req_reinf = (
-            self.total_req_shear[0]
-            if min_side == left
-            else self.total_req_shear[2]
-        )
-        provided_reinf = min_side["provided_reinf"]
-        utilization = round((req_reinf / provided_reinf) * 100, 1)
-        min_side["utilization"] = utilization
-        return shear_links
+        if (
+            shear_links["left"]["solved"] is True
+            and shear_links["right"]["solved"] is True
+        ):
+            left, right = shear_links["left"], shear_links["right"]
+            max_side = max([left, right], key=lambda x: x["provided_reinf"])
+            min_side = left if max_side == right else right
+            min_side.update(
+                {
+                    "links_text": max_side["links_text"],
+                    "provided_reinf": max_side["provided_reinf"],
+                    "diameter": max_side["diameter"],
+                    "spacing": max_side["spacing"],
+                    "solved": max_side["solved"],
+                }
+            )
+            # Calculate and assign individual utilization:
+            req_reinf = (
+                self.total_req_shear[0]
+                if min_side == left
+                else self.total_req_shear[2]
+            )
+            provided_reinf = min_side["provided_reinf"]
+            utilization = round((req_reinf / provided_reinf) * 100, 1)
+            min_side["utilization"] = utilization
+            return shear_links
