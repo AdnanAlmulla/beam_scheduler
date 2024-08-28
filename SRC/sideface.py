@@ -216,7 +216,7 @@ Sideface rebar: {self.sideface_rebar}"""  # noqa: E501
             return best_combination
         else:
             best_combination = {
-                "rebar_text": "Cannot satisfy requirement. Please reassess.",
+                "rebar_text": "Cannot satisfy requirement.",
                 "provided_reinf": 0,
                 "utilization": "-",
                 "diameter": 0,
