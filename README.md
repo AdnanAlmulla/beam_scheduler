@@ -1,1 +1,1 @@
-![Title image](C:/Users/adnan.a/Download/Beam_Scheduler.png)
+![Title image](Downloads/Beam_Scheduler.png)
