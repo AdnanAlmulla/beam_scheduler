@@ -10,6 +10,8 @@ to perform comprehensive beam design calculations.
 
 Classes:
     BeamDesign: Main class for performing beam design calculations.
+    BeamQuantities: Class for calculating material quantities
+    of a designed beam.
 
 Typical usage example:
     beam_data = beam.Beam(...)  # Create a Beam object with necessary properties
@@ -17,6 +19,10 @@ Typical usage example:
     design.calculate_flexural_design()
     design.calculate_shear_design()
     design.calculate_sideface_design()
+
+    quantities = BeamQuantities(design)
+    concrete_volume = quantities.conc_volume
+    total_rebar_volume = quantities.total_rebar_volume
 """
 
 import beam
@@ -41,9 +47,11 @@ class BeamDesign:
             beam (beam): Beam dataclass object.
         """
         self.beam = beam
-        self.flexural_design = flexure.Flexure(self.beam)
-        self.shear_design = shear.Shear(self.beam, self.flexural_design)
-        self.sideface_design = sideface.Sideface(
+        self.flexural_design: flexure.Flexure = flexure.Flexure(self.beam)
+        self.shear_design: shear.Shear = shear.Shear(
+            self.beam, self.flexural_design
+        )
+        self.sideface_design: sideface.Sideface = sideface.Sideface(
             self.beam, self.flexural_design, self.shear_design
         )
 
@@ -109,3 +117,186 @@ class BeamDesign:
         self.sideface_design.get_sideface_clear_space()
         # Obtain the sideface reinforcement.
         self.sideface_design.get_sideface_rebar()
+
+
+class BeamQuantities:
+    """Calculate material quantities for a designed reinforced concrete beam.
+
+    This class provides methods to calculate various quantities such as
+    concrete volume, reinforcement areas, and volumes for a designed beam.
+
+    Attributes:
+        designed_beam (BeamDesign): The designed beam object.
+        storey (str): The storey where the beam is located.
+        etabs_id (str): The ETABS ID of the beam.
+        span (float): The span of the beam.
+        width (float): The width of the beam.
+        depth (float): The depth of the beam.
+    """
+
+    def __init__(self, designed_beam: BeamDesign) -> None:
+        """Initialize the BeamQuantities object.
+
+        Args:
+            designed_beam: A BeamDesign object representing the designed beam.
+        """
+        self.designed_beam: BeamDesign = designed_beam
+        self.storey: str = self.designed_beam.beam.storey
+        self.etabs_id: str = self.designed_beam.beam.etabs_id
+        self.span: float = self.designed_beam.beam.span
+        self.width: float = self.designed_beam.beam.width
+        self.depth: float = self.designed_beam.beam.depth
+
+    @property
+    def conc_area(self) -> float:
+        """Calculate the concrete cross-sectional area of the beam.
+
+        Returns:
+            The concrete cross-sectional area in square meters.
+        """
+        return (self.width * self.depth) * 10**-6
+
+    @property
+    def conc_volume(self) -> float:
+        """Calculate the concrete volume of the beam.
+
+        Returns:
+            The concrete volume in cubic meters.
+        """
+        return round((self.conc_area * self.span) * 10**-3, 3)
+
+    @property
+    def flex_area(self) -> float:
+        """Calculate the total flexural reinforcement area.
+
+        Returns:
+            The total flexural reinforcement area in square meters.
+        """
+        return round(
+            (
+                self.designed_beam.flexural_design.top_flex_rebar["left"][
+                    "provided_reinf"
+                ]
+                + self.designed_beam.flexural_design.top_flex_rebar["middle"][
+                    "provided_reinf"
+                ]
+                + self.designed_beam.flexural_design.top_flex_rebar["right"][
+                    "provided_reinf"
+                ]
+                + self.designed_beam.flexural_design.bot_flex_rebar["left"][
+                    "provided_reinf"
+                ]
+                + self.designed_beam.flexural_design.bot_flex_rebar["middle"][
+                    "provided_reinf"
+                ]
+                + self.designed_beam.flexural_design.bot_flex_rebar["right"][
+                    "provided_reinf"
+                ]
+            )
+            * 10**-6,
+            3,
+        )
+
+    @property
+    def flex_volume(self) -> float:
+        """Calculate the total flexural reinforcement volume.
+
+        Returns:
+            The total flexural reinforcement volume in cubic meters.
+        """
+        return round((self.flex_area * self.span) * 10**-3, 3)
+
+    # TODO: Correct shear area.
+    @property
+    def shear_area(self) -> float:
+        """Calculate the total shear reinforcement area.
+
+        Returns:
+            The total shear reinforcement area in square meters.
+        """
+        return round(
+            (
+                self.designed_beam.shear_design.shear_links["left"][
+                    "provided_reinf"
+                ]
+                + self.designed_beam.shear_design.shear_links["middle"][
+                    "provided_reinf"
+                ]
+                + self.designed_beam.shear_design.shear_links["right"][
+                    "provided_reinf"
+                ]
+            )
+            * 10**-6,
+            3,
+        )
+
+    # TODO: Correct shear volume.
+    @property
+    def shear_volume(self) -> float:
+        """Calculate the total shear reinforcement volume.
+
+        Returns:
+            The total shear reinforcement volume in cubic meters.
+        """
+        try:
+            return round(
+                (
+                    self.designed_beam.shear_design.shear_links["left"][
+                        "provided_reinf"
+                    ]
+                    * (self.span / 1000)
+                    + self.designed_beam.shear_design.shear_links["middle"][
+                        "provided_reinf"
+                    ]
+                    * (self.span / 1000)
+                    + self.designed_beam.shear_design.shear_links["right"][
+                        "provided_reinf"
+                    ]
+                    * (self.span / 1000)
+                )
+                * 10**-6,
+                3,
+            )
+        except ZeroDivisionError:
+            return 0
+
+    @property
+    def sideface_area(self) -> float:
+        """Calculate the total sideface reinforcement area.
+
+        Returns:
+            The total sideface reinforcement area in square meters.
+        """
+        return (
+            self.designed_beam.sideface_design.sideface_rebar["provided_reinf"]
+            * 10**-6
+        )
+
+    @property
+    def sideface_volume(self) -> float:
+        """Calculate the total sideface reinforcement volume.
+
+        Returns:
+            The total sideface reinforcement volume in cubic meters.
+        """
+        return round((self.sideface_area * self.span) * 10**-3, 3)
+
+    @property
+    def total_rebar_area(self) -> float:
+        """Calculate the total reinforcement area.
+
+        Returns:
+            The total reinforcement area in square meters.
+        """
+        return round(self.flex_area + self.shear_area + self.sideface_area, 3)
+
+    @property
+    def total_rebar_volume(self) -> float:
+        """Calculate the total reinforcement volume.
+
+        Returns:
+            The total reinforcement volume in cubic meters.
+        """
+        return round(
+            self.flex_volume + self.shear_volume + self.sideface_volume, 3
+        )

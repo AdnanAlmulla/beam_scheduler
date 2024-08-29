@@ -1,10 +1,25 @@
-"""Module for mapping beam attributes to a pandas DataFrame.
+"""Module for mapping beam attributes to pandas DataFrames.
 
 This module provides functionality to map attributes from BeamDisplayer
-instances to a structured DataFrame, facilitating the creation of beam
-schedules or reports.
+and BeamQuantities instances to structured DataFrames, facilitating the
+creation of beam schedules, reports, and quantity summaries.
+
+Functions:
+    map_beam_attributes: Maps BeamDisplayer attributes to a DataFrame.
+    map_quantities_attributes: Maps BeamQuantities attributes to a DataFrame.
+
+Typical usage example:
+    beam_instances = [BeamDisplayer(...), BeamDisplayer(...)]
+    df = pd.DataFrame(...)  # Pre-structured DataFrame
+    populated_df = map_beam_attributes(beam_instances, df)
+
+    quantity_instances = [BeamQuantities(...), BeamQuantities(...)]
+    quantity_df = pd.DataFrame(...)  # Pre-structured DataFrame
+    populated_quantity_df = map_quantities_attributes(quantity_instances,
+    quantity_df)
 """
 
+import beam_design
 import beam_display
 import pandas as pd
 
@@ -83,6 +98,57 @@ def map_beam_attributes(
     for idx, beams in enumerate(beam_instances):
         for attr, col in beam_mapping.items():
             value = getattr(beams, attr)
+            if isinstance(value, str):
+                dataframe[col] = dataframe[col].astype(object)
+            dataframe.loc[idx, col] = value
+    return dataframe
+
+
+def map_quantities_attributes(
+    beam_instances: list[beam_design.BeamQuantities], dataframe: pd.DataFrame
+) -> pd.DataFrame:
+    """Maps attributes from BeamQuantities instances to a pandas DataFrame.
+
+    This function takes a list of BeamQuantities instances and a pre-structured
+    DataFrame, then populates the DataFrame with the beam quantity attributes.
+    It uses a predefined mapping to match quantity attributes to DataFrame
+    columns.
+
+    Args:
+        beam_instances: A list of BeamQuantities instances containing the beam
+            quantity information.
+        dataframe: A pre-structured pandas DataFrame with appropriate columns
+            for beam quantity attributes.
+
+    Returns:
+        The input DataFrame populated with beam quantity attribute values.
+
+    Note:
+        The function assumes that the input DataFrame has columns that match
+        the values in the quantities_mapping dictionary.
+    """
+    quantities_mapping = {
+        "storey": "Storey",
+        "etabs_id": "Etabs ID",
+        "span": "Span (mm)",
+        "width": "Width (mm)",
+        "depth": "Depth (mm)",
+        "conc_area": "Concrete Area (m^2)",
+        "conc_volume": "Concrete Volume (m^3)",
+        "flex_area": "Flexural Rebar Area (m^2)",
+        "flex_volume": "Flexural Rebar Volume (m^3)",
+        "shear_area": "Shear Rebar Area (m^2)",
+        "shear_volume": "Shear Rebar Volume (m^3)",
+        "sideface_area": "Sideface Rebar Area (m^2)",
+        "sideface_volume": "Sideface Rebar Volume (m^3)",
+        "total_rebar_area": "Total Rebar Area (m^2)",
+        "total_rebar_volume": "Total Rebar Volume (m^3)",
+    }
+    # Loop through all the beam instances and populate the quantity schedule
+    # dataframe with relevant information.
+    for idx, quantities in enumerate(beam_instances):
+        for attr, col in quantities_mapping.items():
+            value = getattr(quantities, attr)
             if isinstance(value, str):
                 dataframe[col] = dataframe[col].astype(object)
             dataframe.loc[idx, col] = value

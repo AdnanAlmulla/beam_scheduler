@@ -28,7 +28,9 @@ import beam_table
 import pandas as pd
 
 
-def process_data(beam_parameters: list[list[Any]]) -> pd.DataFrame:
+def process_data(
+    beam_parameters: list[list[Any]],
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Take the beam instances, design them, and populate dataframe.
 
     Args:
@@ -43,17 +45,12 @@ def process_data(beam_parameters: list[list[Any]]) -> pd.DataFrame:
         return [beam.Beam(*args) for args in zip(*data)]
 
     beam_instances = create_beam_instances(beam_parameters)
-    # List to hold all the designed beams.
     designed_beams = []
     # Loop through beam instances and undertake beam design.
     for beams in beam_instances:
-        # Instantiate the Beam Design object.
         beam_design_instance = beam_design.BeamDesign(beams)
-        # Undertake the process of flexural design.
         beam_design_instance.calculate_flexural_design()
-        # Undertake the process of shear design.
         beam_design_instance.calculate_shear_design()
-        # Undertake the process of sideface design.
         beam_design_instance.calculate_sideface_design()
         # Append all the designed beams to the designed beams list.
         designed_beams.append(beam_design_instance)
@@ -62,12 +59,20 @@ def process_data(beam_parameters: list[list[Any]]) -> pd.DataFrame:
         beam_display.BeamDisplayer(designed_beam)
         for designed_beam in designed_beams
     ]
+    quantities_output = [
+        beam_design.BeamQuantities(designed_beam)
+        for designed_beam in designed_beams
+    ]
 
-    # Get the empty beam schedule df
-    beam_schedule_df = beam_table.get_beam_table()
+    # Get the empty beam schedule and quantities df
+    beam_schedule_df = beam_table.get_beam_table()[0]
+    quantities_schedule_df = beam_table.get_beam_table()[1]
     # Map the attributes of the beam display object to beam schedule.
     beam_schedule_df = beam_mapping.map_beam_attributes(
         beam_output, beam_schedule_df
     )
+    quantities_schedule_df = beam_mapping.map_quantities_attributes(
+        quantities_output, quantities_schedule_df
+    )
 
-    return beam_schedule_df
+    return beam_schedule_df, quantities_schedule_df

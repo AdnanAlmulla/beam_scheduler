@@ -160,7 +160,7 @@ def get_comp_conc_grade(section: str) -> int:
 
 
 def provided_reinforcement(diameter: int) -> float:
-    """A static function which calculates the area of a circle.
+    """Calculate the area of a circle for a given diameter.
 
     Args:
         diameter (int): The selected diameter to calculate the area of a circle.

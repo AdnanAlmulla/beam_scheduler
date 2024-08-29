@@ -7,7 +7,7 @@ representing a beam schedule with various properties and reinforcement details.
 import pandas as pd
 
 
-def get_beam_table() -> pd.DataFrame:
+def get_beam_table() -> tuple[pd.DataFrame, pd.DataFrame]:
     """Create and return an empty DataFrame for a beam schedule.
 
     The DataFrame is structured with a MultiIndex column setup to represent
@@ -68,5 +68,23 @@ def get_beam_table() -> pd.DataFrame:
             ("Shear R Criteria", "Utilization (%)"),
         ]
     )
+    quantities = {
+        "Storey": None,
+        "Etabs ID": None,
+        "Span (mm)": None,
+        "Width (mm)": None,
+        "Depth (mm)": None,
+        "Concrete Area (m^2)": None,
+        "Concrete Volume (m^3)": None,
+        "Flexural Rebar Area (m^2)": None,
+        "Flexural Rebar Volume (m^3)": None,
+        "Shear Rebar Area (m^2)": None,
+        "Shear Rebar Volume (m^3)": None,
+        "Sideface Rebar Area (m^2)": None,
+        "Sideface Rebar Volume (m^3)": None,
+        "Total Rebar Area (m^2)": None,
+        "Total Rebar Volume (m^3)": None,
+    }
     beam_schedule_df = pd.DataFrame(columns=columns)
-    return beam_schedule_df
+    quantities_schedule_df = pd.DataFrame(quantities, index=[0])
+    return beam_schedule_df, quantities_schedule_df

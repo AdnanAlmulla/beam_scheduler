@@ -52,6 +52,22 @@ def designed_beam(example_beam: SRC.beam.Beam) -> SRC.beam_design.BeamDesign:
     return designed_beam
 
 
+@pytest.fixture
+def beam_quantities(
+    designed_beam: SRC.beam_design.BeamDesign,
+) -> SRC.beam_design.BeamQuantities:
+    """Example quantities from a designed beam object utilised for testing.
+
+    Args:
+        designed_beam (SRC.beam_design.BeamDesign): Quantities of designed beam.
+
+    Returns:
+        SRC.beam_design.BeamQuantities: Example quantities to utilise in tests.
+    """
+    beam_quantities = SRC.beam_design.BeamQuantities(designed_beam)
+    return beam_quantities
+
+
 def _assert_shear_link(
     section: dict,
     expected_text: str,
@@ -78,6 +94,26 @@ def _assert_flex_rebar(
     assert section["provided_reinf"] == approx(expected_reinf)
     assert section["utilization"] == expected_utilization
     assert section["diameter"] == expected_diameter
+
+
+def test_concrete_area(beam_quantities: SRC.beam_design.BeamQuantities) -> None:
+    """Check if the concrete area is as expected.
+
+    Args:
+        beam_quantities (SRC.beam_design.BeamQuantities): Refer to example.
+    """
+    assert beam_quantities.conc_area == 0.32  # m^2
+
+
+def test_concrete_volume(
+    beam_quantities: SRC.beam_design.BeamQuantities,
+) -> None:
+    """Check if the concrete volume is as expected.
+
+    Args:
+        beam_quantities (SRC.beam_design.BeamQuantities): Refer to example.
+    """
+    assert beam_quantities.conc_volume == 0.848  # m^3
 
 
 def test_get_long_count(designed_beam: SRC.beam_design.BeamDesign) -> None:
@@ -162,7 +198,6 @@ def test_bot_left_flex_rebar(designed_beam: SRC.beam_design.BeamDesign) -> None:
         34.3,
         [16],
     )
-    print(designed_beam.beam.req_top_flex_reinf)
 
 
 def test_bot_middle_flex_rebar(
@@ -197,6 +232,24 @@ def test_bot_right_flex_rebar(
         24.2,
         [16],
     )
+
+
+def test_flex_area(beam_quantities: SRC.beam_design.BeamQuantities) -> None:
+    """Check that the sum of all provided flexural rebar area is correct.
+
+    Args:
+        beam_quantities (SRC.beam_design.beam_quantities): Refer to example.
+    """
+    assert beam_quantities.flex_area == 0.004  # m^2
+
+
+def test_flex_volume(beam_quantities: SRC.beam_design.BeamQuantities) -> None:
+    """Check that the sum of all provided flexural rebar volume is correct.
+
+    Args:
+        beam_quantities (SRC.beam_design.beam_quantities): Refer to example.
+    """
+    assert beam_quantities.flex_volume == 0.011  # m^3
 
 
 def test_residual_rebar(designed_beam: SRC.beam_design.BeamDesign) -> None:
@@ -294,6 +347,24 @@ def test_right_shear_links(designed_beam: SRC.beam_design.BeamDesign) -> None:
     )
 
 
+def test_shear_area(beam_quantities: SRC.beam_design.BeamQuantities) -> None:
+    """Check if the shear area is as expected.
+
+    Args:
+        beam_quantities (SRC.beam_design.BeamQuantities): Refer to example.
+    """
+    assert beam_quantities.shear_area == 0.005
+
+
+def test_shear_volume(beam_quantities: SRC.beam_design.BeamQuantities) -> None:
+    """Check if the shear volume is as expected.
+
+    Args:
+        beam_quantities (SRC.beam_design.BeamQuantities): Refer to example.
+    """
+    assert beam_quantities.shear_volume == 0.014
+
+
 def test_required_sideface_reinforcement(
     designed_beam: SRC.beam_design.BeamDesign,
 ) -> None:
@@ -347,3 +418,32 @@ def test_sideface_string(designed_beam: SRC.beam_design.BeamDesign) -> None:
     assert designed_beam.sideface_design.sideface_rebar["utilization"] == 81.4
     assert designed_beam.sideface_design.sideface_rebar["diameter"] == 25
     assert designed_beam.sideface_design.sideface_rebar["spacing"] == 250
+
+
+def test_sideface_volume(
+    beam_quantities: SRC.beam_design.BeamQuantities,
+) -> None:
+    """Check that the sideface volume is as expected.
+
+    Args:
+        beam_quantities (SRC.beam_design.BeamQuantities): Refer to example.
+    """
+    assert beam_quantities.sideface_volume == 0.006  # m^3
+
+
+def test_total_area(beam_quantities: SRC.beam_design.BeamQuantities) -> None:
+    """Check that the total rebar area is as expected.
+
+    Args:
+        beam_quantities (SRC.beam_design.BeamQuantities): Refer to example.
+    """
+    assert beam_quantities.total_rebar_area == 0.011  # m^2
+
+
+def test_total_volume(beam_quantities: SRC.beam_design.BeamQuantities) -> None:
+    """Check that the total rebar volume is as expected.
+
+    Args:
+        beam_quantities (SRC.beam_design.BeamQuantities): Refer to example.
+    """
+    assert beam_quantities.total_rebar_volume == 0.031  # m^3

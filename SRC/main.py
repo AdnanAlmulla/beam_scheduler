@@ -32,6 +32,7 @@ import pandas as pd
 from nicegui import events, ui
 
 processed_beam_schedule_df = None
+quantities_schedule_df = None
 
 
 def main() -> None:  # noqa: D103
@@ -80,6 +81,7 @@ async def process_content(
         container (ui.grid): The download button container.
     """
     global processed_beam_schedule_df
+    global quantities_schedule_df
     excel_file = excel_string.content
     checking_flex = pd.read_excel(excel_file, sheet_name=0)
     checking_shear = pd.read_excel(excel_file, sheet_name=1)
@@ -92,7 +94,10 @@ async def process_content(
         and checking_span.columns[0] == "TABLE:  Frame Assignments - Summary"
     ):
         beam_parameters = data_extraction.extract_data(excel_string.content)
-        processed_beam_schedule_df = await asyncio.to_thread(
+        (
+            processed_beam_schedule_df,
+            quantities_schedule_df,
+        ) = await asyncio.to_thread(
             data_processing.process_data, beam_parameters
         )
         with container:
@@ -136,8 +141,12 @@ async def process_content(
 def download_handler() -> None:
     """Handle the download button. Calls the export file functon."""
     global processed_beam_schedule_df
+    global quantities_schedule_df
     # Call export_file to get the in-memory Excel file
-    excel_content = export_file(processed_beam_schedule_df)  # type: ignore
+    excel_content = export_file(
+        processed_beam_schedule_df,  # type: ignore
+        quantities_schedule_df,  # type: ignore
+    )
     # Write the content to a temporary file
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
         tmp.write(excel_content)
@@ -147,11 +156,14 @@ def download_handler() -> None:
 
 
 # Create the relevant functions to export the excel file
-def export_file(beam_schedule_df: pd.DataFrame) -> bytes:
+def export_file(
+    beam_schedule_df: pd.DataFrame, quantities_schedule_df: pd.DataFrame
+) -> bytes:
     """Take the beam schedule and export it into an excel spreadsheet.
 
     Args:
         beam_schedule_df (pd.DataFrame): The processed beam schedule dataframe.
+        quantities_schedule_df (pd.DataFrame): The quantity schedule dataframe.
 
     Returns:
         bytes: The finalised excel spreadsheet in bytes.
@@ -164,12 +176,16 @@ def export_file(beam_schedule_df: pd.DataFrame) -> bytes:
         beam_schedule_df.to_excel(
             writer, sheet_name="Beam Reinforcement Schedule"
         )
+        quantities_schedule_df.to_excel(
+            writer, sheet_name="Quantities Schedule"
+        )
         # Group by the 'Storey' column
         grouped = beam_schedule_df.groupby("Storey", sort=False)
         # Iterate through the groups and write to separate sheets
         for name, group in grouped:
             sheet_name = f"{name}"
             group.to_excel(writer, sheet_name=sheet_name)
+
     # Return the Excel file content from the in-memory buffer
     return output.getvalue()
 

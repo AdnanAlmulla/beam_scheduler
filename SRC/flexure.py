@@ -192,13 +192,16 @@ Residual flexural rebar: {self.residual_rebar}"""
                     "diameter": result["diameter"],
                     "solved": result["solved"],
                 }
+        # A scenario where the rebar cannot be solved should be considered as a
+        # 'failure', so we append True to flex overstressed. This causes shear
+        # and sideface reinforcement to not be solved.
         if any(
             self.top_flex_rebar[location]["rebar_text"]
-            == "Required rebar exceeds two layers. Please assess."
+            == "Required rebar exceeds four layers."
             for location in self.top_flex_rebar
         ) or any(
             self.bot_flex_rebar[location]["rebar_text"]
-            == "Required rebar exceeds two layers. Please assess."
+            == "Required rebar exceeds four layers."
             for location in self.bot_flex_rebar
         ):
             self.beam.flex_overstressed.append(True)
@@ -213,23 +216,44 @@ Residual flexural rebar: {self.residual_rebar}"""
             dict: Returns the rebar text, provided reinforcement area, diameter
             of each layer, and whether the beam object was solved or not.
         """
-        best_combination = None
-        min_excess_area = float("inf")
-        # Consider all combinations of one and two layers
-        all_combinations = [
-            (diameter,) for diameter in self.flex_rebar_dia
-        ] + list(itertools.product(self.flex_rebar_dia, repeat=2))
-        for combination in all_combinations:
-            provided = sum(
-                beam.provided_reinforcement(diameter) * self.flex_rebar_count
-                for diameter in combination
-            )
-            if provided >= requirement:
-                excess_area = provided - requirement
-                if excess_area < min_excess_area:
-                    min_excess_area = excess_area
-                    best_combination = combination
 
+        def get_combinations(n_layers: int) -> list[tuple[int, ...]]:
+            return [(diameter,) for diameter in self.flex_rebar_dia] + list(
+                itertools.product(self.flex_rebar_dia, repeat=n_layers)
+            )
+
+        def get_best_combination(
+            combinations: list[tuple[int, ...]],
+        ) -> tuple[int, ...] | None:
+            best_combination = None
+            min_excess_area = float("inf")
+            for combination in combinations:
+                provided = sum(
+                    beam.provided_reinforcement(diameter)
+                    * self.flex_rebar_count
+                    for diameter in combination
+                )
+                if provided >= requirement:
+                    excess_area = provided - requirement
+                    if excess_area < min_excess_area:
+                        min_excess_area = excess_area
+                        best_combination = combination
+            if not best_combination:
+                return best_combination
+            else:
+                return best_combination
+
+        # Consider all combinations of two layers.
+        all_combinations = get_combinations(2)
+        best_combination = get_best_combination(all_combinations)
+        # Consider all combinations of three layers if the above isn't met.
+        if not best_combination:
+            all_combinations = get_combinations(3)
+            best_combination = get_best_combination(all_combinations)
+        # Consider all combinations of four layers if the above isn't met.
+        if not best_combination:
+            all_combinations = get_combinations(4)
+            best_combination = get_best_combination(all_combinations)
         if best_combination:
             sorted_combination = sorted(best_combination, reverse=True)
             rebar_text = " + ".join(
@@ -249,15 +273,13 @@ Residual flexural rebar: {self.residual_rebar}"""
                 "solved": True,
             }
         return {
-            "rebar_text": "Required rebar exceeds two layers. Please assess.",
+            "rebar_text": "Required rebar exceeds four layers.",
             "provided_reinf": 0,
             "utilization": "-",
-            #! Why does this need to be float("inf")??
             "diameter": [float("inf")],
             "solved": False,
         }
 
-    # TODO: Refactor method with helper functions.
     def assess_feasibility(self) -> None:
         """Determine the feasibility of flexure schedule based on beam span.
 
@@ -266,78 +288,69 @@ Residual flexural rebar: {self.residual_rebar}"""
         reinforcement continous based on the highest provided value.
         """
         # Process top flexural reinforcement:
-        largest_area_provided = float("-inf")
-        selected_combination = None
-        # Index 0 of this list is positive flexure, index 1 is negative flexure.
         if (
             self.beam.flex_overstressed[1] is not True
             and self.beam.span <= 6000
         ):
-            for location, properties in self.top_flex_rebar.items():
-                if (
-                    properties["solved"]
-                    and properties["provided_reinf"] > largest_area_provided
-                ):
-                    largest_area_provided = properties["provided_reinf"]
-                    selected_combination = location
-            for index, (location, properties) in enumerate(
-                self.top_flex_rebar.items()
-            ):
-                if properties["solved"]:
-                    # Copy the reinforcement details from the best combination:
-                    best_combo = self.top_flex_rebar[selected_combination]
-                    self.top_flex_rebar[location].update(
-                        {
-                            "rebar_text": best_combo["rebar_text"],
-                            "provided_reinf": best_combo["provided_reinf"],
-                            "diameter": best_combo["diameter"],
-                        }
-                    )
-                    # Calculate and assign individual utilization:
-                    req_reinf = self.beam.req_top_flex_reinf[index]
-                    provided_reinf = self.top_flex_rebar[location][
-                        "provided_reinf"
-                    ]
-                    utilization = round((req_reinf / provided_reinf) * 100, 1)
-                    self.top_flex_rebar[location]["utilization"] = utilization
-
+            self._assign_rebar(self.top_flex_rebar, "top")
         # Process bottom flexural reinforcement:
-        # Reset largest_area_provided and selected_combination for bottom
-        # reinforcement
-        largest_area_provided = float("-inf")
-        selected_combination = None
-        # Index 0 of this list is positive flexure, index 1 is negative flexure.
         if (
             self.beam.flex_overstressed[0] is not True
             and self.beam.span <= 6000
         ):
-            for location, properties in self.bot_flex_rebar.items():
-                if (
-                    properties["solved"]
-                    and properties["provided_reinf"] > largest_area_provided
-                ):
-                    largest_area_provided = properties["provided_reinf"]
-                    selected_combination = location
-            for index, (location, properties) in enumerate(
-                self.bot_flex_rebar.items()
+            self._assign_rebar(self.bot_flex_rebar, "bot")
+
+    def _assign_rebar(self, rebar_dict: dict, key: str) -> dict:
+        """Fetch the best combination and assign it to the flexural rebar.
+
+        For beams with a span of less than 6 meters, the best combination
+        is obtained and copied across all locations.
+
+        Args:
+            rebar_dict (dict): The flexural rebar dictionary.
+            key (str): A key to indicate if the dictionary is top or bottom.
+
+        Returns:
+            dict: The flexural rebar dictionary with the best combination copied
+            across the beam.
+        """
+        largest_area_provided = float("-inf")
+        selected_combination = None
+        # First get the location of the best combination.
+        for location, properties in rebar_dict.items():
+            if (
+                properties["solved"]
+                and properties["provided_reinf"] > largest_area_provided
             ):
-                if properties["solved"]:
-                    # Copy the reinforcement details from the best combination:
-                    best_combo = self.bot_flex_rebar[selected_combination]
-                    self.bot_flex_rebar[location].update(
-                        {
-                            "rebar_text": best_combo["rebar_text"],
-                            "provided_reinf": best_combo["provided_reinf"],
-                            "diameter": best_combo["diameter"],
-                        }
-                    )
-                    # Calculate and assign individual utilization:
+                largest_area_provided = properties["provided_reinf"]
+                selected_combination = location
+        # Copy the reinforcement details from the best combination
+        for index, (location, properties) in enumerate(rebar_dict.items()):
+            if properties["solved"]:
+                best_combo = rebar_dict[selected_combination]
+                rebar_dict[location].update(
+                    {
+                        "rebar_text": best_combo["rebar_text"],
+                        "provided_reinf": best_combo["provided_reinf"],
+                        "diameter": best_combo["diameter"],
+                    }
+                )
+                # Calculate and assign individual utilization
+                if key == "top":
+                    req_reinf = self.beam.req_top_flex_reinf[index]
+                    provided_reinf = self.top_flex_rebar[location][
+                        "provided_reinf"
+                    ]
+                    utilization = round((req_reinf) / provided_reinf * 100, 1)
+                    rebar_dict[location]["utilization"] = utilization
+                elif key == "bot":
                     req_reinf = self.beam.req_bot_flex_reinf[index]
                     provided_reinf = self.bot_flex_rebar[location][
                         "provided_reinf"
                     ]
-                    utilization = round((req_reinf / provided_reinf) * 100, 1)
-                    self.bot_flex_rebar[location]["utilization"] = utilization
+                    utilization = round((req_reinf) / provided_reinf * 100, 1)
+                    rebar_dict[location]["utilization"] = utilization
+        return rebar_dict
 
     def get_residual_rebar(self) -> None:
         """Calculate the residual rebar for sideface reinforcement.
