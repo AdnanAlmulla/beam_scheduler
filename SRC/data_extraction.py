@@ -10,7 +10,7 @@ import beam
 import pandas as pd
 
 
-def extract_data(excel_file: str | BinaryIO) -> list[list[Any]]:
+def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
     """Extracts beam data from an Excel file.
 
     This function reads beam design data from different sheets of an Excel file
@@ -29,9 +29,9 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]]:
         sheets containing flexural, shear, and span data respectively.
     """
     # Seperate each sheet into unique dataframes.
-    flexural_df = pd.read_excel(excel_file, sheet_name=0, header=1)
-    shear_df = pd.read_excel(excel_file, sheet_name=1, header=1)
-    span_df = pd.read_excel(excel_file, sheet_name=2, header=1)
+    flexural_df = pd.read_excel(excel_file, sheet_name=3, header=1)
+    shear_df = pd.read_excel(excel_file, sheet_name=2, header=1)
+    span_df = pd.read_excel(excel_file, sheet_name=1, header=1)
 
     # Remove the first row of each dataframes.
     flexural_df = flexural_df.drop([0])
@@ -59,6 +59,27 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]]:
             list[str]: List of etabs ids for each beam.
         """
         return dataframe["Label"].tolist()
+
+    def assess_sheet_feasibility(dataframes: list[pd.DataFrame]) -> bool:
+        """Assess whether the indices of each sheet are the same.
+
+        Args:
+            dataframes (list[pd.DataFrame]): List of dataframe elements
+            containing each sheet. Index 1 is assumed to be span, shear
+            and flexure are 2/3.
+
+        Returns:
+            bool: True if the indices are all the same, false if they are not.
+        """
+        span_df = dataframes[0]
+        first_df = dataframes[1]
+        second_df = dataframes[2]
+        span_labels = span_df["Label"].tolist()
+        first_labels = first_df["Label"].tolist()
+        second_labels = second_df["Label"].tolist()
+        first_labels = first_labels[::3]
+        second_labels = second_labels[::3]
+        return span_labels == first_labels == second_labels
 
     def get_width(dataframe: pd.DataFrame) -> list[int]:
         """Get the width of the beam section.
@@ -298,21 +319,21 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]]:
             for i in range(0, len(torsion_reinf_needed), 3)
         ]
 
-    beam_parameters = [
-        get_stories(span_df),
-        get_etabs_ids(span_df),
-        get_width(flexural_df),
-        get_depth(flexural_df),
-        get_span(span_df),
-        get_conc_grade(flexural_df),
-        get_flexural_combo(flexural_df),
-        get_top_flex_area(flexural_df),
-        get_bot_flex_area(flexural_df),
-        get_flex_torsion_area(shear_df),
-        get_shear_force(shear_df),
-        get_shear_combo(shear_df),
-        get_shear_area(shear_df),
-        get_torsion_area(shear_df),
-    ]
-
-    return beam_parameters
+    if assess_sheet_feasibility([span_df, flexural_df, shear_df]):
+        beam_parameters = [
+            get_stories(span_df),
+            get_etabs_ids(span_df),
+            get_width(flexural_df),
+            get_depth(flexural_df),
+            get_span(span_df),
+            get_conc_grade(flexural_df),
+            get_flexural_combo(flexural_df),
+            get_top_flex_area(flexural_df),
+            get_bot_flex_area(flexural_df),
+            get_flex_torsion_area(shear_df),
+            get_shear_force(shear_df),
+            get_shear_combo(shear_df),
+            get_shear_area(shear_df),
+            get_torsion_area(shear_df),
+        ]
+        return beam_parameters

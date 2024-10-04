@@ -83,9 +83,9 @@ async def process_content(
     global processed_beam_schedule_df
     global quantities_schedule_df
     excel_file = excel_string.content
-    checking_flex = pd.read_excel(excel_file, sheet_name=0)
-    checking_shear = pd.read_excel(excel_file, sheet_name=1)
-    checking_span = pd.read_excel(excel_file, sheet_name=2)
+    checking_flex = pd.read_excel(excel_file, sheet_name=3)
+    checking_shear = pd.read_excel(excel_file, sheet_name=2)
+    checking_span = pd.read_excel(excel_file, sheet_name=1)
     if (
         checking_flex.columns[0]
         == "TABLE:  Concrete Beam Flexure Envelope - ACI 318-19"
@@ -94,41 +94,50 @@ async def process_content(
         and checking_span.columns[0] == "TABLE:  Frame Assignments - Summary"
     ):
         beam_parameters = data_extraction.extract_data(excel_string.content)
-        (
-            processed_beam_schedule_df,
-            quantities_schedule_df,
-        ) = await asyncio.to_thread(
-            data_processing.process_data, beam_parameters
-        )
-        with container:
-            if processed_beam_schedule_df.empty:
+        if not beam_parameters:
+            with container:
                 ui.notify(
-                    """The section definitions as exported in the spreadsheet 
-                    do not abide with the syntax required. Please update and 
-                    try again.""",
+                    """The ETABS ids do not match in each spreadsheet.
+                    Please ensure that the rows are not sorted or
+                    filtered.""",
                     type="negative",
                 )
-            elif processed_beam_schedule_df is None:
-                ui.notify(
-                    """No data available for download or uploaded file does not 
-                    adhere to considerations. Please try again.""",
-                    type="negative",
-                )
-            elif isinstance(processed_beam_schedule_df, pd.DataFrame):
+        else:
+            (
+                processed_beam_schedule_df,
+                quantities_schedule_df,
+            ) = await asyncio.to_thread(
+                data_processing.process_data, beam_parameters
+            )
+            with container:
                 if processed_beam_schedule_df.empty:
                     ui.notify(
-                        """Processing did not go through and spreadsheet is 
-                        empty. Please revise and consider context then try 
-                        again""",
-                        type="warning",
+                        """The section definitions as exported in the 
+                        spreadsheet do not abide with the syntax required. 
+                        Please update and try again.""",
+                        type="negative",
                     )
-                else:
+                elif processed_beam_schedule_df is None:
                     ui.notify(
-                        """Processing complete. Please download the completed 
-                        beam schedule.""",
-                        type="positive",
+                        """No data available for download or uploaded file does 
+                        not adhere to considerations. Please try again.""",
+                        type="negative",
                     )
-                    gui.add_down_button(container, download_handler)
+                elif isinstance(processed_beam_schedule_df, pd.DataFrame):
+                    if processed_beam_schedule_df.empty:
+                        ui.notify(
+                            """Processing did not go through and spreadsheet is 
+                            empty. Please revise and consider context then try 
+                            again""",
+                            type="warning",
+                        )
+                    else:
+                        ui.notify(
+                            """Processing complete. Please download the 
+                            completed beam schedule.""",
+                            type="positive",
+                        )
+                        gui.add_down_button(container, download_handler)
     else:
         with container:
             ui.notify(
