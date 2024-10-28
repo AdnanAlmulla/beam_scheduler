@@ -1,5 +1,5 @@
 # **Beam scheduler**
-![Static Badge](https://img.shields.io/badge/required_ETABS_version-v21-blue?style=flat)
+![Static Badge](https://img.shields.io/badge/required_ETABS_version-v22-blue?style=flat)
 ![Static Badge](https://img.shields.io/badge/python-v3.12.1%2B-green?style=flat)
 ![Static Badge](https://img.shields.io/badge/license-MIT-purple?style=flat)
 
