@@ -32,11 +32,13 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
     flexural_df = pd.read_excel(excel_file, sheet_name=3, header=1)
     shear_df = pd.read_excel(excel_file, sheet_name=2, header=1)
     span_df = pd.read_excel(excel_file, sheet_name=1, header=1)
+    program_df = pd.read_excel(excel_file, sheet_name=0, header=1)
 
     # Remove the first row of each dataframes.
     flexural_df = flexural_df.drop([0])
     shear_df = shear_df.drop([0])
     span_df = span_df.drop([0])
+    program_df = program_df.drop([0])
 
     def get_stories(dataframe: pd.DataFrame) -> list[str]:
         """Get the storey definitions for each beam.
@@ -59,6 +61,18 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
             list[str]: List of etabs ids for each beam.
         """
         return dataframe["Label"].tolist()
+
+    def get_code(dataframe: pd.DataFrame) -> str:
+        """Get the design code which governs beam codal requirements.
+
+        Args:
+            dataframe (pd.DataFrame): Dataframe to get design code from.
+
+        Returns:
+            str: String containing design code (currently either ACI 318-19 or
+            Eurocode 2-2004)
+        """
+        return dataframe.at[1, "ConcFrmCode"]
 
     def assess_sheet_feasibility(dataframes: list[pd.DataFrame]) -> bool:
         """Assess whether the indices of each sheet are the same.
@@ -319,10 +333,11 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
             for i in range(0, len(torsion_reinf_needed), 3)
         ]
 
-    if assess_sheet_feasibility([span_df, flexural_df, shear_df]):
+    if assess_sheet_feasibility([program_df, span_df, flexural_df, shear_df]):
         beam_parameters = [
             get_stories(span_df),
             get_etabs_ids(span_df),
+            get_code(program_df),
             get_width(flexural_df),
             get_depth(flexural_df),
             get_span(span_df),

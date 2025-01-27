@@ -38,8 +38,7 @@ quantities_schedule_df = None
 def main() -> None:  # noqa: D103
     gui.start_popup()
     gui.ui_header()
-    gui.main_row(lambda e: excel_handler(e, download_container))
-    download_container = gui.download_container()
+    gui.main_row(lambda e: excel_handler(e, gui.download_container()))
     ui.run(reload=False, title="Beam Scheduler", native=True)
 
 

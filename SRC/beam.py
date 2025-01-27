@@ -64,6 +64,7 @@ class Beam:
 
     storey: str = "No storey provided."
     etabs_id: str = "No ETABS ID."
+    design_code: str = "ACI 318-19"  # assumes ACI by default
     width: int = 0  # in mm
     depth: int = 0  # in mm
     span: int = 0  # in mm
