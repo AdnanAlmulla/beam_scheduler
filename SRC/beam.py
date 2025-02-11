@@ -43,6 +43,7 @@ class Beam:
     Attributes:
         storey (str): The storey level of the beam.
         etabs_id (str): The unique identifier for the beam in ETABS.
+        design_code (str): The design code which the beam will be designed to.
         width (int): The width of the beam in mm.
         depth (int): The overall depth of the beam in mm.
         span (int): The span of the beam in mm.
