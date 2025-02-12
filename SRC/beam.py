@@ -80,9 +80,13 @@ class Beam:
     req_bot_flex_reinf: list[int] = field(
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
-    req_torsion_flex_reinf: list[int] = field(
+    req_torsion_flex_reinf: list[int] | list[list[int]] = field(
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
+    #! Created for EC2 edgecases
+    req_top_torsion_flex_reinf: list[int] = field(init=False)  # in mm^2
+    #! Created for EC2 edgecases
+    req_bot_torsion_flex_reinf: list[int] = field(init=False)  # in mm^2
     shear_force: list[int] = field(default_factory=lambda: [0, 0, 0])  # in kN
     # * Index 0 of this list is shear, index 1 is torsion.
     shear_overstressed: list[bool] = field(
@@ -97,7 +101,12 @@ class Beam:
     eff_depth: float = field(init=False)  # in mm
 
     def __post_init__(self) -> None:
-        """Initialises effective depth once the depth attribute is provided."""
+        """Initialises eff depth and flexural torsion requirement for EC2."""
+        if isinstance(self.req_torsion_flex_reinf[0], list) and isinstance(
+            self.req_torsion_flex_reinf[1], list
+        ):
+            self.req_top_torsion_flex_reinf = self.req_torsion_flex_reinf[0]
+            self.req_bot_torsion_flex_reinf = self.req_torsion_flex_reinf[1]
         self.eff_depth = 0.8 * self.depth
 
 

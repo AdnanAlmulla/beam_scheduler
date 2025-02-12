@@ -62,7 +62,7 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
         """
         return dataframe["Label"].tolist()
 
-    def get_code(dataframe: pd.DataFrame) -> str:
+    def get_code(dataframe: pd.DataFrame) -> list[str]:
         """Get the design code which governs beam codal requirements.
 
         Args:
@@ -72,7 +72,7 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
             str: String containing design code (currently either ACI 318-19 or
             Eurocode 2-2004)
         """
-        return dataframe.at[1, "ConcFrmCode"]
+        return [dataframe.at[1, "ConcFrmCode"]]
 
     def assess_sheet_feasibility(dataframes: list[pd.DataFrame]) -> bool:
         """Assess whether the indices of each sheet are the same.
@@ -225,7 +225,7 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
 
     def get_flex_torsion_area(
         dataframe: pd.DataFrame, program_df: pd.DataFrame
-    ) -> list[list[int]] | dict[str, list[list[int]]]:
+    ) -> list[list[int]] | list[list[list[int]]]:
         """Get the required flexural torsion area of reinforcement.
 
         Args:
@@ -241,7 +241,7 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
             area of flexural torsion:
             [left, middle, right]
         """
-        if program_df["ConcFrmCode"] == "ACI 318-19":
+        if program_df.at[1, "ConcFrmCode"] == "ACI 318-19":
             flex_torsion_reinf_needed = dataframe["TLngRebar (Al)"].tolist()
             return [
                 flex_torsion_reinf_needed[i : i + 3]
@@ -250,16 +250,23 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
         else:
             flex_torsion_top = dataframe["Asl Top"].tolist()
             flex_torsion_bot = dataframe["Asl Bottom"].tolist()
-            return {
-                "top": [
-                    flex_torsion_top[i : i + 3]
-                    for i in range(0, len(flex_torsion_top), 3)
-                ],
-                "bot": [
-                    flex_torsion_bot[i : i + 3]
-                    for i in range(0, len(flex_torsion_bot), 3)
-                ],
-            }
+            top_flex_torsion = [
+                flex_torsion_top[i : i + 3]
+                for i in range(0, len(flex_torsion_top), 3)
+            ]
+            bot_flex_torsion = [
+                flex_torsion_bot[i : i + 3]
+                for i in range(0, len(flex_torsion_bot), 3)
+            ]
+            combined_flex_torsion = [
+                combination
+                for pair in zip(top_flex_torsion, bot_flex_torsion)
+                for combination in pair
+            ]
+            return [
+                combined_flex_torsion[i : i + 2]
+                for i in range(0, len(combined_flex_torsion), 2)
+            ]
 
     def get_shear_force(dataframe: pd.DataFrame) -> list[list[int]]:
         """Get the shear force of each beam.
@@ -355,7 +362,7 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
             for i in range(0, len(torsion_reinf_needed), 3)
         ]
 
-    if assess_sheet_feasibility([program_df, span_df, flexural_df, shear_df]):
+    if assess_sheet_feasibility([span_df, flexural_df, shear_df]):
         beam_parameters = [
             get_stories(span_df),
             get_etabs_ids(span_df),

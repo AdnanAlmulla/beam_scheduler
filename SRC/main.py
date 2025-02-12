@@ -86,10 +86,8 @@ async def process_content(
     checking_shear = pd.read_excel(excel_file, sheet_name=2)
     checking_span = pd.read_excel(excel_file, sheet_name=1)
     if (
-        checking_flex.columns[0]
-        == "TABLE:  Concrete Beam Flexure Envelope - ACI 318-19"
-        and checking_shear.columns[0]
-        == "TABLE:  Concrete Beam Shear Envelope - ACI 318-19"
+        "TABLE:  Concrete Beam Flexure Envelope" in checking_flex.columns[0]
+        and "TABLE:  Concrete Beam Shear Envelope" in checking_shear.columns[0]
         and checking_span.columns[0] == "TABLE:  Frame Assignments - Summary"
     ):
         beam_parameters = data_extraction.extract_data(excel_string.content)
