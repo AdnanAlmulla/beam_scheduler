@@ -62,17 +62,22 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
         """
         return dataframe["Label"].tolist()
 
-    def get_code(dataframe: pd.DataFrame) -> list[str]:
+    def get_code(
+        dataframe: pd.DataFrame, span_dataframe: pd.DataFrame
+    ) -> list[str]:
         """Get the design code which governs beam codal requirements.
 
         Args:
             dataframe (pd.DataFrame): Dataframe to get design code from.
+            span_dataframe (pd.DataFrame): Dataframe to multiply number code by.
 
         Returns:
-            str: String containing design code (currently either ACI 318-19 or
-            Eurocode 2-2004)
+            list[str]: String containing design code (currently either
+            ACI 318-19 or Eurocode 2-2004)
         """
-        return [dataframe.at[1, "ConcFrmCode"]]
+        return [dataframe.at[1, "ConcFrmCode"]] * len(
+            span_dataframe["Label"].tolist()
+        )
 
     def assess_sheet_feasibility(dataframes: list[pd.DataFrame]) -> bool:
         """Assess whether the indices of each sheet are the same.
@@ -366,7 +371,7 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
         beam_parameters = [
             get_stories(span_df),
             get_etabs_ids(span_df),
-            get_code(program_df),
+            get_code(program_df, span_df),
             get_width(flexural_df),
             get_depth(flexural_df),
             get_span(span_df),
