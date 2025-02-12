@@ -11,15 +11,6 @@ needs, calculating minimum shear spacing, and designing shear links.
 
 Classes:
     Shear: Main class for shear reinforcement calculations and design.
-
-Typical usage example:
-    beam_data = beam.Beam(...)  # Create a Beam object
-    flexure_design = flexure.Flexure(...)  # Create a Flexure object
-    shear_design = Shear(beam_data, flexure_design)
-    shear_design.get_shear_links_count()
-    shear_design.get_total_shear_req()
-    shear_design.get_min_shear_spacing()
-    shear_design.get_shear_links()
 """
 
 import itertools

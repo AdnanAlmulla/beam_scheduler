@@ -7,16 +7,6 @@ creation of beam schedules, reports, and quantity summaries.
 Functions:
     map_beam_attributes: Maps BeamDisplayer attributes to a DataFrame.
     map_quantities_attributes: Maps BeamQuantities attributes to a DataFrame.
-
-Typical usage example:
-    beam_instances = [BeamDisplayer(...), BeamDisplayer(...)]
-    df = pd.DataFrame(...)  # Pre-structured DataFrame
-    populated_df = map_beam_attributes(beam_instances, df)
-
-    quantity_instances = [BeamQuantities(...), BeamQuantities(...)]
-    quantity_df = pd.DataFrame(...)  # Pre-structured DataFrame
-    populated_quantity_df = map_quantities_attributes(quantity_instances,
-    quantity_df)
 """
 
 import beam_design

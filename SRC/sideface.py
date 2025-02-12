@@ -5,20 +5,12 @@ sideface reinforcement for reinforced concrete beams. It works in conjunction
 with the beam, flexure, and shear modules to determine optimal sideface rebar
 configurations.
 
-The module is specifically designed for beams with a depth greater than 700mm,
-addressing torsional reinforcement requirements and clear spacing constraints.
+The module is specifically designed for beams with a depth greater than 700mm
+(if ACI 318-19, 1000mm if Eurocode 2-2004), addressing torsional reinforcement
+requirements and clear spacing constraints.
 
 Classes:
     Sideface: Main class for sideface reinforcement calculations and design.
-
-Typical usage example:
-    beam_data = beam.Beam(...)  # Create a Beam object
-    flexure_design = flexure.Flexure(...)  # Create a Flexure object
-    shear_design = shear.Shear(...)  # Create a Shear object
-    sideface = Sideface(beam_data, flexure_design, shear_design)
-    sideface.get_required_reinforcement()
-    sideface.get_sideface_clear_space()
-    sideface.get_sideface_rebar()
 """
 
 import itertools
@@ -100,28 +92,59 @@ Sideface rebar: {self.sideface_rebar}"""  # noqa: E501
         the residual flexural rebar from the required flexural torsion area
         to provide the total required flexural torsion reinforcement for beams
         with a depth greater than 700mm.
+
+        For EC2 edgecases, the depth requirement is changed to 1000mm.
         """
         #! Do not solve if shear and flexure are overstressed. This is done
         #! as the sideface clear space wouldn't be calcualted as a result.
-        if (
-            not (
-                any(self.beam.flex_overstressed)
-                or any(self.beam.shear_overstressed)
-            )
-            and self.beam.depth > 700
-        ):
-            for index, location in enumerate(
-                self.required_torsion_reinforcement
-            ):
-                self.required_torsion_reinforcement[location] = (
-                    self.beam.req_torsion_flex_reinf[index]
-                    - self.flexure.residual_rebar[location]
-                )
-                if self.required_torsion_reinforcement[location] < 0:
-                    self.required_torsion_reinforcement[location] = 0
-            self.total_required_torsion_reinforcement = max(
-                self.required_torsion_reinforcement.values(), default=0
-            )
+        match self.beam.design_code:
+            case "ACI 318-19":
+                if (
+                    not (
+                        any(self.beam.flex_overstressed)
+                        or any(self.beam.shear_overstressed)
+                    )
+                    and self.beam.depth > 700
+                ):
+                    for index, location in enumerate(
+                        self.required_torsion_reinforcement
+                    ):
+                        self.required_torsion_reinforcement[location] = (
+                            self.beam.req_torsion_flex_reinf[index]
+                            - self.flexure.residual_rebar[location]
+                        )
+                        if self.required_torsion_reinforcement[location] < 0:
+                            self.required_torsion_reinforcement[location] = 0
+                    self.total_required_torsion_reinforcement = max(
+                        self.required_torsion_reinforcement.values(), default=0
+                    )
+            case "Eurocode 2-2004":
+                if (
+                    not (
+                        any(self.beam.flex_overstressed)
+                        or any(self.beam.shear_overstressed)
+                    )
+                    and self.beam.depth >= 1000
+                ):
+                    total_tor_requirement = [
+                        top_req + bot_req
+                        for top_req, bot_req in zip(
+                            self.beam.req_top_torsion_flex_reinf,
+                            self.beam.req_bot_torsion_flex_reinf,
+                        )
+                    ]
+                    for index, location in enumerate(
+                        self.required_torsion_reinforcement
+                    ):
+                        self.required_torsion_reinforcement[location] = (
+                            total_tor_requirement[index]
+                            - self.flexure.residual_rebar[location]
+                        )
+                        if self.required_torsion_reinforcement[location] < 0:
+                            self.required_torsion_reinforcement[location] = 0
+                    self.total_required_torsion_reinforcement = max(
+                        self.required_torsion_reinforcement.values(), default=0
+                    )
 
     def get_sideface_clear_space(self) -> None:
         """Calculate the sideface clear face based on maximum beam diameters.
@@ -132,22 +155,18 @@ Sideface rebar: {self.sideface_rebar}"""  # noqa: E501
         in the most reduced sideface clearspace)and subtracts them by the
         effective depth of the beam object.
         """
+
         #! Do not solve if shear and flexure are overstressed. This is done
         #! as the sideface clear space wouldn't be calcualted as a result.
-        if (
-            not (
-                any(self.beam.flex_overstressed)
-                or any(self.beam.shear_overstressed)
-            )
-            and self.beam.depth > 700
-        ):
-            # Helper function to return a list of the summed up diameters.
-            def grab_dia(rebar_dict: dict) -> list:
-                rebar_dia = [0]
-                for location in rebar_dict:
-                    rebar_dia.append(sum(rebar_dict[location]["diameter"]))
-                return rebar_dia
+        # Helper function to return a list of the summed up diameters.
+        def grab_dia(rebar_dict: dict) -> list:
+            rebar_dia = [0]
+            for location in rebar_dict:
+                rebar_dia.append(sum(rebar_dict[location]["diameter"]))
+            return rebar_dia
 
+        # Helper function to calculate sideface clear space.
+        def get_clear_space() -> None:
             self.sideface_clearspace = (
                 self.beam.eff_depth
                 - (
@@ -161,20 +180,41 @@ Sideface rebar: {self.sideface_rebar}"""  # noqa: E501
                 - max(grab_dia(self.flexure.bot_flex_rebar))
             )
 
+        not_overstress = not (
+            any(self.beam.flex_overstressed)
+            or any(self.beam.shear_overstressed)
+        )
+        meets_criteria = not_overstress and (
+            (self.beam.design_code == "ACI 318-19" and self.beam.depth > 700)
+            or (
+                self.beam.design_code == "Eurocode 2-2004"
+                and self.beam.depth >= 1000
+            )
+        )
+        if meets_criteria:
+            get_clear_space()
+
     def get_sideface_rebar(self) -> None:
         """Obtain the sideface rebar.
 
         This method calculates the side face reinforcement for beam objects with
         a depth greater than 700mm. It utilises the _find_rebar_configuration
         helper method to obtain the most optimal rebar configuration.
+
+        For EC2 edgecases, the depth requirement is changed to 1000mm.
         """
-        if (
-            not (
-                any(self.beam.flex_overstressed)
-                or any(self.beam.shear_overstressed)
+        not_overstress = not (
+            any(self.beam.flex_overstressed)
+            or any(self.beam.shear_overstressed)
+        )
+        meets_criteria = not_overstress and (
+            (self.beam.design_code == "ACI 318-19" and self.beam.depth > 700)
+            or (
+                self.beam.design_code == "Eurocode 2-2004"
+                and self.beam.depth >= 1000
             )
-            and self.beam.depth > 700
-        ):
+        )
+        if meets_criteria:
             self.sideface_rebar = self._find_rebar_configuration(
                 self.total_required_torsion_reinforcement
             )

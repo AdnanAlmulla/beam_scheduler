@@ -15,15 +15,6 @@ Functions:
     get_comp_conc_grade: Extracts the concrete compressive strength from an
     ETABs section descriptor.
     provided_reinforcement: Calculates the area of a circular reinforcing bar.
-
-Typical usage example:
-    section = "B600X750C40/50"
-    width = get_width(section)
-    depth = get_depth(section)
-    fc_prime = get_comp_conc_grade(section)
-
-    beam = Beam(width=width, depth=depth, comp_conc_grade=fc_prime)
-    rebar_area = provided_reinforcement(20)  # Area of 20mm diameter bar
 """
 
 from dataclasses import dataclass, field

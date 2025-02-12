@@ -12,17 +12,6 @@ Classes:
     BeamDesign: Main class for performing beam design calculations.
     BeamQuantities: Class for calculating material quantities
     of a designed beam.
-
-Typical usage example:
-    beam_data = beam.Beam(...)  # Create a Beam object with necessary properties
-    design = BeamDesign(beam_data)
-    design.calculate_flexural_design()
-    design.calculate_shear_design()
-    design.calculate_sideface_design()
-
-    quantities = BeamQuantities(design)
-    concrete_volume = quantities.conc_volume
-    total_rebar_volume = quantities.total_rebar_volume
 """
 
 import beam

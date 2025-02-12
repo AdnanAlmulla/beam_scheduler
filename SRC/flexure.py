@@ -11,15 +11,6 @@ based on beam span, and calculating residual rebar for sideface reinforcement.
 
 Classes:
     Flexure: Main class for flexural reinforcement calculations and design.
-
-Typical usage example:
-    beam_data = beam.Beam(...)  # Create a Beam object
-    flexure_design = Flexure(beam_data)
-    flexure_design.get_long_count()
-    flexure_design.flex_torsion_splitting()
-    flexure_design.get_flex_rebar()
-    flexure_design.assess_feasibility()
-    flexure_design.get_residual_rebar()
 """
 
 import itertools
@@ -130,25 +121,59 @@ Residual flexural rebar: {self.residual_rebar}"""
         Splits the longitudinal torsional reinforcement requirement between the
         top and bottom if the depth of the beam <= 700mm. It then modifies the
         Beam objects longitudinal torsion reinforcement requirements to 0.
+
+        For EC2 edgecases, the longitudinal torsional reinforcement as extracted
+        from ETABS is added to the top and bottom flexural reinforcement
+        requirements respectively (as ETABS provides seperate values unlike
+        for the ACI 318-19 cases).
         """
-        if True not in self.beam.flex_overstressed and self.beam.depth <= 700:
-            divided_torsion_list = [
-                flex_torsion_area / 2
-                for flex_torsion_area in self.beam.req_torsion_flex_reinf
-            ]
-            self.beam.req_top_flex_reinf = [  # pyright: ignore reportAttributeAccessIssue
-                divided_flex_tor_area + top_flex_area
-                for divided_flex_tor_area, top_flex_area in zip(
-                    divided_torsion_list, self.beam.req_top_flex_reinf
-                )
-            ]
-            self.beam.req_bot_flex_reinf = [  # pyright: ignore reportAttributeAccessIssue
-                divided_flex_tor_area + bot_flex_area
-                for divided_flex_tor_area, bot_flex_area in zip(
-                    divided_torsion_list, self.beam.req_bot_flex_reinf
-                )
-            ]
-            self.beam.req_torsion_flex_reinf = [0, 0, 0]
+        match self.beam.design_code:
+            case "ACI 318-19":
+                if (
+                    True not in self.beam.flex_overstressed
+                    and self.beam.depth <= 700
+                ):
+                    divided_torsion_list = [
+                        flex_torsion_area / 2
+                        for flex_torsion_area in self.beam.req_torsion_flex_reinf  # noqa: E501
+                        if isinstance(flex_torsion_area, int)
+                    ]
+                    self.beam.req_top_flex_reinf = [  # pyright: ignore reportAttributeAccessIssue
+                        divided_flex_tor_area + top_flex_area
+                        for divided_flex_tor_area, top_flex_area in zip(
+                            divided_torsion_list,
+                            self.beam.req_top_flex_reinf,
+                        )
+                    ]
+                    self.beam.req_bot_flex_reinf = [  # pyright: ignore reportAttributeAccessIssue
+                        divided_flex_tor_area + bot_flex_area
+                        for divided_flex_tor_area, bot_flex_area in zip(
+                            divided_torsion_list,
+                            self.beam.req_bot_flex_reinf,
+                        )
+                    ]
+                self.beam.req_torsion_flex_reinf = [0, 0, 0]
+            case "Eurocode 2-2004":
+                if (
+                    True not in self.beam.flex_overstressed
+                    and self.beam.depth < 1000
+                ):
+                    self.beam.req_top_flex_reinf = [
+                        flex_tor_area + top_flex_area
+                        for flex_tor_area, top_flex_area in zip(
+                            self.beam.req_top_torsion_flex_reinf,
+                            self.beam.req_top_flex_reinf,
+                        )
+                    ]
+                    self.beam.req_bot_flex_reinf = [
+                        flex_tor_area + bot_flex_area
+                        for flex_tor_area, bot_flex_area in zip(
+                            self.beam.req_bot_torsion_flex_reinf,
+                            self.beam.req_bot_flex_reinf,
+                        )
+                    ]
+                    self.beam.req_top_torsion_flex_reinf = [0, 0, 0]
+                    self.beam.req_bot_torsion_flex_reinf = [0, 0, 0]
 
     def get_flex_rebar(self) -> None:
         """Solve for the flexural rebar.
