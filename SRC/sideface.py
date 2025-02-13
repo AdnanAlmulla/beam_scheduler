@@ -97,15 +97,19 @@ Sideface rebar: {self.sideface_rebar}"""  # noqa: E501
         """
         #! Do not solve if shear and flexure are overstressed. This is done
         #! as the sideface clear space wouldn't be calcualted as a result.
+        ACI_requirement = (
+            self.beam.design_code == "ACI 318-19" and self.beam.depth > 700
+        )
+        EC2_requirement = (
+            self.beam.design_code == "Eurocode 2-2004"
+            and self.beam.depth >= 1000
+        )
+        meets_criteria = not self.beam.overstressed and (
+            ACI_requirement or EC2_requirement
+        )
         match self.beam.design_code:
             case "ACI 318-19":
-                if (
-                    not (
-                        any(self.beam.flex_overstressed)
-                        or any(self.beam.shear_overstressed)
-                    )
-                    and self.beam.depth > 700
-                ):
+                if meets_criteria:
                     for index, location in enumerate(
                         self.required_torsion_reinforcement
                     ):
@@ -119,13 +123,7 @@ Sideface rebar: {self.sideface_rebar}"""  # noqa: E501
                         self.required_torsion_reinforcement.values(), default=0
                     )
             case "Eurocode 2-2004":
-                if (
-                    not (
-                        any(self.beam.flex_overstressed)
-                        or any(self.beam.shear_overstressed)
-                    )
-                    and self.beam.depth >= 1000
-                ):
+                if meets_criteria:
                     total_tor_requirement = [
                         top_req + bot_req
                         for top_req, bot_req in zip(
@@ -180,16 +178,15 @@ Sideface rebar: {self.sideface_rebar}"""  # noqa: E501
                 - max(grab_dia(self.flexure.bot_flex_rebar))
             )
 
-        not_overstress = not (
-            any(self.beam.flex_overstressed)
-            or any(self.beam.shear_overstressed)
+        ACI_requirement = (
+            self.beam.design_code == "ACI 318-19" and self.beam.depth > 700
         )
-        meets_criteria = not_overstress and (
-            (self.beam.design_code == "ACI 318-19" and self.beam.depth > 700)
-            or (
-                self.beam.design_code == "Eurocode 2-2004"
-                and self.beam.depth >= 1000
-            )
+        EC2_requirement = (
+            self.beam.design_code == "Eurocode 2-2004"
+            and self.beam.depth >= 1000
+        )
+        meets_criteria = not self.beam.overstressed and (
+            ACI_requirement or EC2_requirement
         )
         if meets_criteria:
             get_clear_space()
@@ -203,16 +200,15 @@ Sideface rebar: {self.sideface_rebar}"""  # noqa: E501
 
         For EC2 edgecases, the depth requirement is changed to 1000mm.
         """
-        not_overstress = not (
-            any(self.beam.flex_overstressed)
-            or any(self.beam.shear_overstressed)
+        ACI_requirement = (
+            self.beam.design_code == "ACI 318-19" and self.beam.depth > 700
         )
-        meets_criteria = not_overstress and (
-            (self.beam.design_code == "ACI 318-19" and self.beam.depth > 700)
-            or (
-                self.beam.design_code == "Eurocode 2-2004"
-                and self.beam.depth >= 1000
-            )
+        EC2_requirement = (
+            self.beam.design_code == "Eurocode 2-2004"
+            and self.beam.depth >= 1000
+        )
+        meets_criteria = not self.beam.overstressed and (
+            ACI_requirement or EC2_requirement
         )
         if meets_criteria:
             self.sideface_rebar = self._find_rebar_configuration(

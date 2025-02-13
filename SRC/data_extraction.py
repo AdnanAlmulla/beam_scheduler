@@ -152,48 +152,33 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
             for sections in dataframe["Section"][::3]
         ]
 
-    def get_flexural_combo(dataframe: pd.DataFrame) -> list[list[bool]]:
-        """Get the flexural combination condition for each beam.
+    def get_flexural_overstressed_condition(
+        dataframe: pd.DataFrame,
+    ) -> list[bool]:
+        """Get the flexural combination condition of each beam.
 
         Args:
-            dataframe (pd.DataFrame): Dataframe to get combination from.
+            dataframe (pd.DataFrame): Dataframe to get combination from
 
         Returns:
-            list[list[bool]]: Nested list containing booleans [pos, neg].
+            list[bool]: List containing booleans describing true if beam is
+            overstressed in flexure and false if not.
         """
-        # Take each beam's flexural combo and put it in a list within a list.
-        pos_combo_list = dataframe["+ve Moment Combo"].tolist()
-        nested_pos_combo_list = [
-            pos_combo_list[i : i + 3] for i in range(0, len(pos_combo_list), 3)
+
+        # Helper function to clean the string of the beam status.
+        def clean_status(status: str) -> str | None:
+            if isinstance(status, str):
+                check = status.lower().split()
+                return "o/s" if "o/s" in check else None
+
+        flexure_combo_List = dataframe["Status"].tolist()
+        nested_flexure_status = [
+            flexure_combo_List[i : i + 3]
+            for i in range(0, len(flexure_combo_List), 3)
         ]
-        neg_combo_list = dataframe["-ve Moment Combo"].tolist()
-        nested_neg_combo_list = [
-            neg_combo_list[i : i + 3] for i in range(0, len(neg_combo_list), 3)
-        ]
-        # Return True if any of the combos in the list are overstressed.
-        checked_pos_combo_list = [
-            bool(
-                any(
-                    str(element).strip().lower() in ["o/s", "nan"]
-                    for element in sublist
-                )
-            )
-            for sublist in nested_pos_combo_list
-        ]
-        checked_neg_combo_list = [
-            bool(
-                any(
-                    str(element).strip().lower() in ["o/s", "nan"]
-                    for element in sublist
-                )
-            )
-            for sublist in nested_neg_combo_list
-        ]
-        # Zip the positive and negative combos together. Index 0 is positive and
-        # Index 1 is negative.
         return [
-            [pos, neg]
-            for pos, neg in zip(checked_pos_combo_list, checked_neg_combo_list)
+            any(str(clean_status(element)) in ["o/s"] for element in sublist)
+            for sublist in nested_flexure_status
         ]
 
     def get_top_flex_area(dataframe: pd.DataFrame) -> list[list[int]]:
@@ -289,50 +274,33 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
             for i in range(0, len(shear_force_list), 3)
         ]
 
-    def get_shear_combo(dataframe: pd.DataFrame) -> list[list[bool]]:
-        """Get the shear combination condition for each beam.
+    def get_shear_overstressed_condition(
+        dataframe: pd.DataFrame,
+    ) -> list[bool]:
+        """Get the shear combination condition of each beam.
 
         Args:
             dataframe (pd.DataFrame): Dataframe to get combination from.
 
         Returns:
-            list[list[bool]]: Nested list containing booleans [shear, torsion].
+            list[bool]: List containing booleans describing true if
+            beam is overstressed in shear and false if not.
         """
-        shear_combo_list = dataframe["Shear Design Combo"].tolist()
-        nested_shear_combo = [
+
+        # Helper function to clean the string of the beam status.
+        def clean_status(status: str) -> str | None:
+            if isinstance(status, str):
+                check = status.lower().split()
+                return "o/s" if "o/s" in check else None
+
+        shear_combo_list = dataframe["Status"].tolist()
+        nested_shear_status = [
             shear_combo_list[i : i + 3]
             for i in range(0, len(shear_combo_list), 3)
         ]
-        # Take the nested list and return OK or OS as a string in a list.
-        checked_shear_combo = [
-            bool(
-                any(
-                    str(element).strip().lower() in ["o/s", "nan"]
-                    for element in sublist
-                )
-            )
-            for sublist in nested_shear_combo
-        ]
-        # Repeat the same as shear combo, except for torsion combo.
-        torsion_combo_list = dataframe["TTrnCombo"].tolist()
-        nested_torsion_combo = [
-            torsion_combo_list[i : i + 3]
-            for i in range(0, len(torsion_combo_list), 3)
-        ]
-        checked_torsion_combo = [
-            bool(
-                any(
-                    str(element).strip().lower() in ["o/s", "nan"]
-                    for element in sublist
-                )
-            )
-            for sublist in nested_torsion_combo
-        ]
         return [
-            [shear, torsion]
-            for shear, torsion in zip(
-                checked_shear_combo, checked_torsion_combo
-            )
+            any(str(clean_status(element)) in ["o/s"] for element in sublist)
+            for sublist in nested_shear_status
         ]
 
     def get_shear_area(dataframe: pd.DataFrame) -> list[list[int]]:
@@ -376,12 +344,12 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
             get_depth(flexural_df),
             get_span(span_df),
             get_conc_grade(flexural_df),
-            get_flexural_combo(flexural_df),
+            get_flexural_overstressed_condition(flexural_df),
             get_top_flex_area(flexural_df),
             get_bot_flex_area(flexural_df),
             get_flex_torsion_area(shear_df, program_df),
             get_shear_force(shear_df),
-            get_shear_combo(shear_df),
+            get_shear_overstressed_condition(shear_df),
             get_shear_area(shear_df),
             get_torsion_area(shear_df),
         ]

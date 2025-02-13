@@ -100,7 +100,7 @@ Shear links: {self.shear_links}"""
         Calculate the required shear legs based on the maximum
         stransverse shear spacing as required in Table 9.7.6.2.2. of ACI 318-19.
         """
-        if True not in self.beam.shear_overstressed:
+        if not self.beam.overstressed:
             max_transverse_spacing = min(
                 self._assess_transverse_shear_spacing()
             )
@@ -158,7 +158,7 @@ Shear links: {self.shear_links}"""
         Call the required shear and torsion reinforcement attributes and
         calculate the total shear reinforcement required.
         """
-        if True not in self.beam.shear_overstressed:
+        if not self.beam.overstressed:
             self.total_req_shear = [
                 round(a + 2 * b)
                 for a, b in zip(
@@ -173,12 +173,8 @@ Shear links: {self.shear_links}"""
         longitudinal spacing does not exceed its codal maximum for the
         left/right and middle shear links.
         """
-        #! By writing this conditional, an overstressed condition in top or
-        #! bottom flex reinforcement will not solve for shear reinforcement.
-        if not (
-            any(self.beam.flex_overstressed)
-            or any(self.beam.shear_overstressed)
-        ):
+        #! Not solved for if the beam is overstressed in flexure.
+        if not self.beam.overstressed:
 
             def get_min_diameter(rebar_dict: dict) -> int:
                 return min(
@@ -238,11 +234,8 @@ Shear links: {self.shear_links}"""
         configuration.
         """
         locations = ["left", "middle", "right"]
-        #! Flex overstressed is checked as minimum shear spacing is not solved.
-        if not (
-            any(self.beam.flex_overstressed)
-            or any(self.beam.shear_overstressed)
-        ):
+        #! Not solved for if the beam is overstressed in flexure.
+        if not self.beam.overstressed:
             for location, requirement, torsion_requirement in zip(
                 locations, self.total_req_shear, self.beam.req_torsion_reinf
             ):
@@ -275,10 +268,7 @@ Shear links: {self.shear_links}"""
                     }
             # Copy the highest provided to the left or right.
             self._copy_highest_provided(self.shear_links)
-        elif (
-            len(self.beam.flex_overstressed) == 3
-            and self.beam.flex_overstressed[2] is True
-        ):
+        elif self.beam.overstressed and not self.beam.flex_overstressed:
             for location in self.shear_links:
                 self.shear_links[location]["links_text"] = "-"
         else:
