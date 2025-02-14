@@ -134,12 +134,12 @@ Residual flexural rebar: {self.residual_rebar}"""
             self.beam.design_code == "Eurocode 2-2004"
             and self.beam.depth < 1000
         )
-        meets_critera = not self.beam.overstressed and (
+        meets_criteria = not self.beam.overstressed and (
             ACI_requirement or EC2_requirement
         )
         match self.beam.design_code:
             case "ACI 318-19":
-                if meets_critera:
+                if meets_criteria:
                     divided_torsion_list = [
                         flex_torsion_area / 2
                         for flex_torsion_area in self.beam.req_torsion_flex_reinf  # noqa: E501
@@ -161,7 +161,7 @@ Residual flexural rebar: {self.residual_rebar}"""
                     ]
                 self.beam.req_torsion_flex_reinf = [0, 0, 0]
             case "Eurocode 2-2004":
-                if meets_critera:
+                if meets_criteria:
                     self.beam.req_top_flex_reinf = [
                         flex_tor_area + top_flex_area
                         for flex_tor_area, top_flex_area in zip(
@@ -260,11 +260,24 @@ Residual flexural rebar: {self.residual_rebar}"""
                     * self.flex_rebar_count
                     for diameter in combination
                 )
-                if provided >= requirement:
-                    excess_area = provided - requirement
-                    if excess_area < min_excess_area:
-                        min_excess_area = excess_area
-                        best_combination = combination
+                match self.beam.design_code:
+                    case "ACI 318-19":
+                        if provided >= requirement:
+                            excess_area = provided - requirement
+                            if excess_area < min_excess_area:
+                                min_excess_area = excess_area
+                                best_combination = combination
+                    # This case is introduced to satisfy EC2 9.2.1.1 (3)
+                    case "Eurocode 2-2004":
+                        if (
+                            provided
+                            >= requirement
+                            <= (0.04 * self.beam.depth * self.beam.width)
+                        ):
+                            excess_area = provided - requirement
+                            if excess_area < min_excess_area:
+                                min_excess_area = excess_area
+                                best_combination = combination
             if not best_combination:
                 return best_combination
             else:

@@ -66,7 +66,8 @@ def start_popup() -> None:
                 convention such as ''B400X600-C45/55'', where 400 is width and 
                 600 is depth."""
             )
-            ui.label("4. This script adheres to ACI 318-19 for beam design.")
+            ui.label("""4. This script adheres to ACI 318-19 or Eurocode 2 
+                    for beam design.""")
             ui.label(
                 """5. Do not filter or alter the exported design results from 
                 ETABS. Leave it as it was obtained, as filtering or 
@@ -105,7 +106,8 @@ async def question_popup() -> None:
                 convention such as ''B400X600-C45/55'', where 400 is width and 
                 600 is depth."""
             )
-            ui.label("6. This script adheres to ACI 318-19 for beam design.")
+            ui.label("""4. This script adheres to ACI 318-19 or Eurocode 2 
+                    for beam design.""")
             ui.label(
                 """7. Do not filter or alter the exported design results from 
                 ETABS. Leave it as it was obtained, as filtering or shifting 

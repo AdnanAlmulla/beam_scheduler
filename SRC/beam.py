@@ -93,7 +93,7 @@ class Beam:
         2) flexural torsion requirement for EC2.
         3) Overall condition of beam (if overstressed in flexure, shear, etc).
         """
-        self.eff_depth = 0.8 * self.depth
+        self.eff_depth = int(0.8 * self.depth)
         if isinstance(self.req_torsion_flex_reinf[0], list) and isinstance(
             self.req_torsion_flex_reinf[1], list
         ):
