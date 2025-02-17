@@ -392,7 +392,16 @@ Residual flexural rebar: {self.residual_rebar}"""
         bottom and subtracts them by their relevant required area.
         It then adds the remaining top and bottom residual together.
         """
-        meets_criteria = not self.beam.overstressed and self.beam.depth > 700
+        ACI_requirement = (
+            self.beam.design_code == "ACI 318-19" and self.beam.depth > 700
+        )
+        EC2_requirement = (
+            self.beam.design_code == "Eurocode 2-2004"
+            and self.beam.depth >= 1000
+        )
+        meets_criteria = not self.beam.overstressed and (
+            ACI_requirement or EC2_requirement
+        )
         if meets_criteria:
             for index, location in enumerate(self.residual_rebar):
                 top_residual = (
