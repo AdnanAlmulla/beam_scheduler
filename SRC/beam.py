@@ -87,12 +87,12 @@ class Beam:
     overstressed: bool = field(init=False)  # overall status of beam condition
 
     def __post_init__(self) -> None:
-        """Initialises the following after input.
+        """Initialises the following after input:
 
         1) Effective depth.
         2) flexural torsion requirement for EC2.
         3) Overall condition of beam (if overstressed in flexure, shear, etc).
-        """
+        """  # noqa: D415
         self.eff_depth = int(0.8 * self.depth)
         if isinstance(self.req_torsion_flex_reinf[0], list) and isinstance(
             self.req_torsion_flex_reinf[1], list
