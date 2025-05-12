@@ -11,15 +11,6 @@ needs, calculating minimum shear spacing, and designing shear links.
 
 Classes:
     Shear: Main class for shear reinforcement calculations and design.
-
-Typical usage example:
-    beam_data = beam.Beam(...)  # Create a Beam object
-    flexure_design = flexure.Flexure(...)  # Create a Flexure object
-    shear_design = Shear(beam_data, flexure_design)
-    shear_design.get_shear_links_count()
-    shear_design.get_total_shear_req()
-    shear_design.get_min_shear_spacing()
-    shear_design.get_shear_links()
 """
 
 import itertools
@@ -106,14 +97,14 @@ Shear links: {self.shear_links}"""
     def get_shear_links_count(self) -> None:
         """Calculate the required shear legs.
 
-        Calculate the required shear legs based on the maximum
-        stransverse shear spacing as required in Table 9.7.6.2.2. of ACI 318-19.
+        Calculate the required shear legs based on the maximum transverse shear
+        spacing as required in Table 9.7.6.2.2. of ACI 318-19. For EC2 edge case
+        clause 9.2.2 (8) BS EN 1992-1-1 is utilized to obtain the maximum
+        transverse shear spacing.
         """
-        if True not in self.beam.shear_overstressed:
-            max_transverse_spacing = min(
-                self._assess_transverse_shear_spacing()
-            )
-            req_legs = (self.beam.width - 80) / max_transverse_spacing
+
+        def obtain_links(transverse_spacing: int | float) -> None:
+            req_legs = (self.beam.width - 80) / transverse_spacing
             if req_legs < 2:
                 if self.flexure.flex_rebar_count == 2:
                     self.shear_links_count.append(2)
@@ -123,6 +114,19 @@ Shear links: {self.shear_links}"""
                     self.shear_links_count = self.shear_links_count + [2, 3, 4]
             else:
                 self.shear_links_count = self.shear_links_count + [2, 3, 4]
+
+        if not self.beam.overstressed:
+            match self.beam.design_code:
+                case "ACI 318-19":
+                    max_transverse_spacing = min(
+                        self._assess_transverse_shear_spacing()
+                    )
+                    obtain_links(max_transverse_spacing)
+                case "Eurocode 2-2004":
+                    max_transverse_spacing = min(
+                        [0.75 * self.beam.eff_depth, 600]
+                    )
+                    obtain_links(max_transverse_spacing)
 
     def _assess_transverse_shear_spacing(self) -> list[int | float]:
         """Assess whether the transverse shear spacing requires to be checked.
@@ -165,9 +169,10 @@ Shear links: {self.shear_links}"""
         """Calculate the total required shear area.
 
         Call the required shear and torsion reinforcement attributes and
-        calculate the total shear reinforcement required.
+        calculate the total shear reinforcement required. This is based on
+        R9.5.4.3 of ACI 318-19.
         """
-        if True not in self.beam.shear_overstressed:
+        if not self.beam.overstressed:
             self.total_req_shear = [
                 round(a + 2 * b)
                 for a, b in zip(
@@ -180,14 +185,10 @@ Shear links: {self.shear_links}"""
 
         This method follows Clause 18.4.2.4 of ACI 318-19 by ensuring that the
         longitudinal spacing does not exceed its codal maximum for the
-        left/right and middle shear links.
+        left/right and middle shear links. For EC2 edge causes, clause 9.2.2 (6)
+        is followed for all beam locations.
         """
-        #! By writing this conditional, an overstressed condition in top or
-        #! bottom flex reinforcement will not solve for shear reinforcement.
-        if not (
-            any(self.beam.flex_overstressed)
-            or any(self.beam.shear_overstressed)
-        ):
+        if not self.beam.overstressed:
 
             def get_min_diameter(rebar_dict: dict) -> int:
                 return min(
@@ -197,28 +198,6 @@ Shear links: {self.shear_links}"""
                     )
                 )
 
-            smallest_long_dia = min(
-                get_min_diameter(self.flexure.top_flex_rebar),
-                get_min_diameter(self.flexure.bot_flex_rebar),
-            )
-            # Assume worst case diameter for shear as it's not been derived yet.
-            smallest_shear_dia = 12
-            min_shear_spacing = min(
-                [
-                    (self.beam.eff_depth / 4),
-                    (smallest_long_dia * 8),
-                    (smallest_shear_dia * 24),
-                    250,
-                ]
-            )
-            min_shear_center_spacing = min([(self.beam.eff_depth / 2), 250])
-            spacing_thresholds = [
-                (200, 250, 200),
-                (150, 200, 150),
-                (125, 150, 125),
-                (100, 125, 100),
-            ]
-
             def update_spacing(spacing_list: list, min_spacing: float) -> list:
                 for lower, upper, value in spacing_thresholds:
                     if lower <= min_spacing < upper:
@@ -227,12 +206,52 @@ Shear links: {self.shear_links}"""
                 spacing_list.append(min_spacing)
                 return [s for s in spacing_list if s <= min_spacing]
 
-            self.shear_spacing = update_spacing(
-                self.shear_spacing, min_shear_spacing
+            smallest_long_dia = min(
+                get_min_diameter(self.flexure.top_flex_rebar),
+                get_min_diameter(self.flexure.bot_flex_rebar),
             )
-            self.shear_center_spacing = update_spacing(
-                self.shear_center_spacing, min_shear_center_spacing
-            )
+            # Assume worst case diameter for shear as it's not been derived yet.
+            smallest_shear_dia = 12
+            spacing_thresholds = [
+                (200, 250, 200),
+                (150, 200, 150),
+                (125, 150, 125),
+                (100, 125, 100),
+            ]
+            match self.beam.design_code:
+                case "ACI 318-19":
+                    min_shear_spacing = min(
+                        [
+                            (self.beam.eff_depth / 4),
+                            (smallest_long_dia * 8),
+                            (smallest_shear_dia * 24),
+                            250,
+                        ]
+                    )
+                    min_shear_center_spacing = min(
+                        [(self.beam.eff_depth / 2), 250]
+                    )
+                    self.shear_spacing = update_spacing(
+                        self.shear_spacing, min_shear_spacing
+                    )
+                    self.shear_center_spacing = update_spacing(
+                        self.shear_center_spacing, min_shear_center_spacing
+                    )
+
+                case "Eurocode 2-2004":
+                    # Explicitly limited spacing to 250 to minimise higher
+                    # diameter usage.
+                    min_shear_spacing = min(0.75 * self.beam.eff_depth, 250)
+                    min_shear_center_spacing = min(
+                        0.75 * self.beam.eff_depth, 250
+                    )
+                    self.shear_spacing = update_spacing(
+                        self.shear_spacing, min_shear_spacing
+                    )
+                    self.shear_center_spacing = update_spacing(
+                        self.shear_center_spacing, min_shear_center_spacing
+                    )
+
             self.shear_spacing = list(set(self.shear_spacing))
             self.shear_center_spacing = list(set(self.shear_center_spacing))
             self.shear_spacing.sort(reverse=True)
@@ -247,11 +266,8 @@ Shear links: {self.shear_links}"""
         configuration.
         """
         locations = ["left", "middle", "right"]
-        #! Flex overstressed is checked as minimum shear spacing is not solved.
-        if not (
-            any(self.beam.flex_overstressed)
-            or any(self.beam.shear_overstressed)
-        ):
+        #! Not solved for if the beam is overstressed in flexure.
+        if not self.beam.overstressed:
             for location, requirement, torsion_requirement in zip(
                 locations, self.total_req_shear, self.beam.req_torsion_reinf
             ):
@@ -284,10 +300,7 @@ Shear links: {self.shear_links}"""
                     }
             # Copy the highest provided to the left or right.
             self._copy_highest_provided(self.shear_links)
-        elif (
-            len(self.beam.flex_overstressed) == 3
-            and self.beam.flex_overstressed[2] is True
-        ):
+        elif self.beam.overstressed and not self.beam.flex_overstressed:
             for location in self.shear_links:
                 self.shear_links[location]["links_text"] = "-"
         else:

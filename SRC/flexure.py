@@ -11,15 +11,6 @@ based on beam span, and calculating residual rebar for sideface reinforcement.
 
 Classes:
     Flexure: Main class for flexural reinforcement calculations and design.
-
-Typical usage example:
-    beam_data = beam.Beam(...)  # Create a Beam object
-    flexure_design = Flexure(beam_data)
-    flexure_design.get_long_count()
-    flexure_design.flex_torsion_splitting()
-    flexure_design.get_flex_rebar()
-    flexure_design.assess_feasibility()
-    flexure_design.get_residual_rebar()
 """
 
 import itertools
@@ -130,25 +121,63 @@ Residual flexural rebar: {self.residual_rebar}"""
         Splits the longitudinal torsional reinforcement requirement between the
         top and bottom if the depth of the beam <= 700mm. It then modifies the
         Beam objects longitudinal torsion reinforcement requirements to 0.
+
+        For EC2 edgecases, the longitudinal torsional reinforcement as extracted
+        from ETABS is added to the top and bottom flexural reinforcement
+        requirements respectively (as ETABS provides seperate values unlike
+        for the ACI 318-19 cases).
         """
-        if True not in self.beam.flex_overstressed and self.beam.depth <= 700:
-            divided_torsion_list = [
-                flex_torsion_area / 2
-                for flex_torsion_area in self.beam.req_torsion_flex_reinf
-            ]
-            self.beam.req_top_flex_reinf = [  # pyright: ignore reportAttributeAccessIssue
-                divided_flex_tor_area + top_flex_area
-                for divided_flex_tor_area, top_flex_area in zip(
-                    divided_torsion_list, self.beam.req_top_flex_reinf
-                )
-            ]
-            self.beam.req_bot_flex_reinf = [  # pyright: ignore reportAttributeAccessIssue
-                divided_flex_tor_area + bot_flex_area
-                for divided_flex_tor_area, bot_flex_area in zip(
-                    divided_torsion_list, self.beam.req_bot_flex_reinf
-                )
-            ]
-            self.beam.req_torsion_flex_reinf = [0, 0, 0]
+        ACI_requirement = (
+            self.beam.design_code == "ACI 318-19" and self.beam.depth <= 700
+        )
+        EC2_requirement = (
+            self.beam.design_code == "Eurocode 2-2004"
+            and self.beam.depth < 1000
+        )
+        meets_criteria = not self.beam.overstressed and (
+            ACI_requirement or EC2_requirement
+        )
+        match self.beam.design_code:
+            case "ACI 318-19":
+                if meets_criteria:
+                    divided_torsion_list = [
+                        flex_torsion_area / 2
+                        for flex_torsion_area in self.beam.req_torsion_flex_reinf  # noqa: E501
+                        if isinstance(flex_torsion_area, int)
+                    ]
+                    self.beam.req_top_flex_reinf = [  # pyright: ignore reportAttributeAccessIssue
+                        divided_flex_tor_area + top_flex_area
+                        for divided_flex_tor_area, top_flex_area in zip(
+                            divided_torsion_list,
+                            self.beam.req_top_flex_reinf,
+                        )
+                    ]
+                    self.beam.req_bot_flex_reinf = [  # pyright: ignore reportAttributeAccessIssue
+                        divided_flex_tor_area + bot_flex_area
+                        for divided_flex_tor_area, bot_flex_area in zip(
+                            divided_torsion_list,
+                            self.beam.req_bot_flex_reinf,
+                        )
+                    ]
+                self.beam.req_torsion_flex_reinf = [0, 0, 0]
+            case "Eurocode 2-2004":
+                if meets_criteria:
+                    self.beam.req_top_flex_reinf = [
+                        flex_tor_area + top_flex_area
+                        for flex_tor_area, top_flex_area in zip(
+                            self.beam.req_top_torsion_flex_reinf,
+                            self.beam.req_top_flex_reinf,
+                        )
+                    ]
+                    self.beam.req_bot_flex_reinf = [
+                        flex_tor_area + bot_flex_area
+                        for flex_tor_area, bot_flex_area in zip(
+                            self.beam.req_bot_torsion_flex_reinf,
+                            self.beam.req_bot_flex_reinf,
+                        )
+                    ]
+                    self.beam.req_top_torsion_flex_reinf = [0, 0, 0]
+                    self.beam.req_bot_torsion_flex_reinf = [0, 0, 0]
 
     def get_flex_rebar(self) -> None:
         """Solve for the flexural rebar.
@@ -163,8 +192,7 @@ Residual flexural rebar: {self.residual_rebar}"""
         for location, requirement in zip(
             locations, self.beam.req_top_flex_reinf
         ):
-            # Index 0 is positive flexure, index 1 is negative flexure.
-            if any(self.beam.flex_overstressed):
+            if self.beam.overstressed:
                 self.top_flex_rebar[location]["rebar_text"] = "Overstressed"
             else:
                 result = self._find_rebar_configuration(requirement)
@@ -180,8 +208,7 @@ Residual flexural rebar: {self.residual_rebar}"""
         for location, requirement in zip(
             locations, self.beam.req_bot_flex_reinf
         ):
-            # Index 0 is positive flexure, index 1 is negative flexure.
-            if any(self.beam.flex_overstressed):
+            if self.beam.overstressed:
                 self.bot_flex_rebar[location]["rebar_text"] = "Overstressed"
             else:
                 result = self._find_rebar_configuration(requirement)
@@ -193,8 +220,8 @@ Residual flexural rebar: {self.residual_rebar}"""
                     "solved": result["solved"],
                 }
         # A scenario where the rebar cannot be solved should be considered as a
-        # 'failure', so we append True to flex overstressed. This causes shear
-        # and sideface reinforcement to not be solved.
+        # 'failure', so we flag the beam overstress attribute as true.
+        # This causes shear and sideface reinforcement to not be solved.
         if any(
             self.top_flex_rebar[location]["rebar_text"]
             == "Required rebar exceeds four layers."
@@ -204,7 +231,7 @@ Residual flexural rebar: {self.residual_rebar}"""
             == "Required rebar exceeds four layers."
             for location in self.bot_flex_rebar
         ):
-            self.beam.flex_overstressed.append(True)
+            self.beam.overstressed = True
 
     def _find_rebar_configuration(self, requirement: int) -> dict:
         """Find the optimal rebar configuration for the required rebar area.
@@ -233,11 +260,24 @@ Residual flexural rebar: {self.residual_rebar}"""
                     * self.flex_rebar_count
                     for diameter in combination
                 )
-                if provided >= requirement:
-                    excess_area = provided - requirement
-                    if excess_area < min_excess_area:
-                        min_excess_area = excess_area
-                        best_combination = combination
+                match self.beam.design_code:
+                    case "ACI 318-19":
+                        if provided >= requirement:
+                            excess_area = provided - requirement
+                            if excess_area < min_excess_area:
+                                min_excess_area = excess_area
+                                best_combination = combination
+                    # This case is introduced to satisfy EC2 9.2.1.1 (3)
+                    case "Eurocode 2-2004":
+                        if (
+                            provided
+                            >= requirement
+                            <= (0.04 * self.beam.depth * self.beam.width)
+                        ):
+                            excess_area = provided - requirement
+                            if excess_area < min_excess_area:
+                                min_excess_area = excess_area
+                                best_combination = combination
             if not best_combination:
                 return best_combination
             else:
@@ -287,17 +327,10 @@ Residual flexural rebar: {self.residual_rebar}"""
         on its span. Beams with a span of 6 metres or less will have its
         reinforcement continous based on the highest provided value.
         """
-        # Process top flexural reinforcement:
-        if (
-            self.beam.flex_overstressed[1] is not True
-            and self.beam.span <= 6000
-        ):
+        meets_criteria = not self.beam.overstressed and self.beam.span <= 6000
+        # Process top and bottom flexural reinforcement:
+        if meets_criteria:
             self._assign_rebar(self.top_flex_rebar, "top")
-        # Process bottom flexural reinforcement:
-        if (
-            self.beam.flex_overstressed[0] is not True
-            and self.beam.span <= 6000
-        ):
             self._assign_rebar(self.bot_flex_rebar, "bot")
 
     def _assign_rebar(self, rebar_dict: dict, key: str) -> dict:
@@ -359,7 +392,17 @@ Residual flexural rebar: {self.residual_rebar}"""
         bottom and subtracts them by their relevant required area.
         It then adds the remaining top and bottom residual together.
         """
-        if self.beam.depth > 700 and True not in self.beam.flex_overstressed:
+        ACI_requirement = (
+            self.beam.design_code == "ACI 318-19" and self.beam.depth > 700
+        )
+        EC2_requirement = (
+            self.beam.design_code == "Eurocode 2-2004"
+            and self.beam.depth >= 1000
+        )
+        meets_criteria = not self.beam.overstressed and (
+            ACI_requirement or EC2_requirement
+        )
+        if meets_criteria:
             for index, location in enumerate(self.residual_rebar):
                 top_residual = (
                     self.top_flex_rebar[location]["provided_reinf"]

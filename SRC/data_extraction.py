@@ -32,11 +32,13 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
     flexural_df = pd.read_excel(excel_file, sheet_name=3, header=1)
     shear_df = pd.read_excel(excel_file, sheet_name=2, header=1)
     span_df = pd.read_excel(excel_file, sheet_name=1, header=1)
+    program_df = pd.read_excel(excel_file, sheet_name=0, header=1)
 
     # Remove the first row of each dataframes.
     flexural_df = flexural_df.drop([0])
     shear_df = shear_df.drop([0])
     span_df = span_df.drop([0])
+    program_df = program_df.drop([0])
 
     def get_stories(dataframe: pd.DataFrame) -> list[str]:
         """Get the storey definitions for each beam.
@@ -59,6 +61,23 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
             list[str]: List of etabs ids for each beam.
         """
         return dataframe["Label"].tolist()
+
+    def get_code(
+        dataframe: pd.DataFrame, span_dataframe: pd.DataFrame
+    ) -> list[str]:
+        """Get the design code which governs beam codal requirements.
+
+        Args:
+            dataframe (pd.DataFrame): Dataframe to get design code from.
+            span_dataframe (pd.DataFrame): Dataframe to multiply number code by.
+
+        Returns:
+            list[str]: String containing design code (currently either
+            ACI 318-19 or Eurocode 2-2004)
+        """
+        return [dataframe.at[1, "ConcFrmCode"]] * len(
+            span_dataframe["Label"].tolist()
+        )
 
     def assess_sheet_feasibility(dataframes: list[pd.DataFrame]) -> bool:
         """Assess whether the indices of each sheet are the same.
@@ -133,48 +152,33 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
             for sections in dataframe["Section"][::3]
         ]
 
-    def get_flexural_combo(dataframe: pd.DataFrame) -> list[list[bool]]:
-        """Get the flexural combination condition for each beam.
+    def get_flexural_overstressed_condition(
+        dataframe: pd.DataFrame,
+    ) -> list[bool]:
+        """Get the flexural combination condition of each beam.
 
         Args:
-            dataframe (pd.DataFrame): Dataframe to get combination from.
+            dataframe (pd.DataFrame): Dataframe to get combination from
 
         Returns:
-            list[list[bool]]: Nested list containing booleans [pos, neg].
+            list[bool]: List containing booleans describing true if beam is
+            overstressed in flexure and false if not.
         """
-        # Take each beam's flexural combo and put it in a list within a list.
-        pos_combo_list = dataframe["+ve Moment Combo"].tolist()
-        nested_pos_combo_list = [
-            pos_combo_list[i : i + 3] for i in range(0, len(pos_combo_list), 3)
+
+        # Helper function to clean the string of the beam status.
+        def clean_status(status: str) -> str | None:
+            if isinstance(status, str):
+                check = status.lower().split()
+                return "o/s" if "o/s" in check else None
+
+        flexure_combo_List = dataframe["Status"].tolist()
+        nested_flexure_status = [
+            flexure_combo_List[i : i + 3]
+            for i in range(0, len(flexure_combo_List), 3)
         ]
-        neg_combo_list = dataframe["-ve Moment Combo"].tolist()
-        nested_neg_combo_list = [
-            neg_combo_list[i : i + 3] for i in range(0, len(neg_combo_list), 3)
-        ]
-        # Return True if any of the combos in the list are overstressed.
-        checked_pos_combo_list = [
-            bool(
-                any(
-                    str(element).strip().lower() in ["o/s", "nan"]
-                    for element in sublist
-                )
-            )
-            for sublist in nested_pos_combo_list
-        ]
-        checked_neg_combo_list = [
-            bool(
-                any(
-                    str(element).strip().lower() in ["o/s", "nan"]
-                    for element in sublist
-                )
-            )
-            for sublist in nested_neg_combo_list
-        ]
-        # Zip the positive and negative combos together. Index 0 is positive and
-        # Index 1 is negative.
         return [
-            [pos, neg]
-            for pos, neg in zip(checked_pos_combo_list, checked_neg_combo_list)
+            any(str(clean_status(element)) in ["o/s"] for element in sublist)
+            for sublist in nested_flexure_status
         ]
 
     def get_top_flex_area(dataframe: pd.DataFrame) -> list[list[int]]:
@@ -209,21 +213,50 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
             for i in range(0, len(bot_flex_reinf_needed), 3)
         ]
 
-    def get_flex_torsion_area(dataframe: pd.DataFrame) -> list[list[int]]:
+    def get_flex_torsion_area(
+        dataframe: pd.DataFrame, program_df: pd.DataFrame
+    ) -> list[list[int]] | list[list[list[int]]]:
         """Get the required flexural torsion area of reinforcement.
 
         Args:
-            dataframe (pd.DataFrame): Dataframe to get area of flextorsion from.
+            dataframe (pd.DataFrame): Dataframe to get area of fleural torsion
+            from.
+            program_df (pd.DataFrame): Dataframe to get design code from.
 
         Returns:
             list[list[int]]: Nested list containing area of flexural torsion:
             [left, middle, right]
+            dict[str, list[list[int]]]: Dictionary containing keys top or bottom
+            These keys contain nested lists for each beam and their subsequent
+            area of flexural torsion:
+            [left, middle, right]
         """
-        flex_torsion_reinf_needed = dataframe["TLngRebar (Al)"].tolist()
-        return [
-            flex_torsion_reinf_needed[i : i + 3]
-            for i in range(0, len(flex_torsion_reinf_needed), 3)
-        ]
+        if program_df.at[1, "ConcFrmCode"] == "ACI 318-19":
+            flex_torsion_reinf_needed = dataframe["TLngRebar (Al)"].tolist()
+            return [
+                flex_torsion_reinf_needed[i : i + 3]
+                for i in range(0, len(flex_torsion_reinf_needed), 3)
+            ]
+        else:
+            flex_torsion_top = dataframe["Asl Top"].tolist()
+            flex_torsion_bot = dataframe["Asl Bottom"].tolist()
+            top_flex_torsion = [
+                flex_torsion_top[i : i + 3]
+                for i in range(0, len(flex_torsion_top), 3)
+            ]
+            bot_flex_torsion = [
+                flex_torsion_bot[i : i + 3]
+                for i in range(0, len(flex_torsion_bot), 3)
+            ]
+            combined_flex_torsion = [
+                combination
+                for pair in zip(top_flex_torsion, bot_flex_torsion)
+                for combination in pair
+            ]
+            return [
+                combined_flex_torsion[i : i + 2]
+                for i in range(0, len(combined_flex_torsion), 2)
+            ]
 
     def get_shear_force(dataframe: pd.DataFrame) -> list[list[int]]:
         """Get the shear force of each beam.
@@ -241,50 +274,33 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
             for i in range(0, len(shear_force_list), 3)
         ]
 
-    def get_shear_combo(dataframe: pd.DataFrame) -> list[list[bool]]:
-        """Get the shear combination condition for each beam.
+    def get_shear_overstressed_condition(
+        dataframe: pd.DataFrame,
+    ) -> list[bool]:
+        """Get the shear combination condition of each beam.
 
         Args:
             dataframe (pd.DataFrame): Dataframe to get combination from.
 
         Returns:
-            list[list[bool]]: Nested list containing booleans [shear, torsion].
+            list[bool]: List containing booleans describing true if
+            beam is overstressed in shear and false if not.
         """
-        shear_combo_list = dataframe["Shear Design Combo"].tolist()
-        nested_shear_combo = [
+
+        # Helper function to clean the string of the beam status.
+        def clean_status(status: str) -> str | None:
+            if isinstance(status, str):
+                check = status.lower().split()
+                return "o/s" if "o/s" in check else None
+
+        shear_combo_list = dataframe["Status"].tolist()
+        nested_shear_status = [
             shear_combo_list[i : i + 3]
             for i in range(0, len(shear_combo_list), 3)
         ]
-        # Take the nested list and return OK or OS as a string in a list.
-        checked_shear_combo = [
-            bool(
-                any(
-                    str(element).strip().lower() in ["o/s", "nan"]
-                    for element in sublist
-                )
-            )
-            for sublist in nested_shear_combo
-        ]
-        # Repeat the same as shear combo, except for torsion combo.
-        torsion_combo_list = dataframe["TTrnCombo"].tolist()
-        nested_torsion_combo = [
-            torsion_combo_list[i : i + 3]
-            for i in range(0, len(torsion_combo_list), 3)
-        ]
-        checked_torsion_combo = [
-            bool(
-                any(
-                    str(element).strip().lower() in ["o/s", "nan"]
-                    for element in sublist
-                )
-            )
-            for sublist in nested_torsion_combo
-        ]
         return [
-            [shear, torsion]
-            for shear, torsion in zip(
-                checked_shear_combo, checked_torsion_combo
-            )
+            any(str(clean_status(element)) in ["o/s"] for element in sublist)
+            for sublist in nested_shear_status
         ]
 
     def get_shear_area(dataframe: pd.DataFrame) -> list[list[int]]:
@@ -323,16 +339,17 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
         beam_parameters = [
             get_stories(span_df),
             get_etabs_ids(span_df),
+            get_code(program_df, span_df),
             get_width(flexural_df),
             get_depth(flexural_df),
             get_span(span_df),
             get_conc_grade(flexural_df),
-            get_flexural_combo(flexural_df),
+            get_flexural_overstressed_condition(flexural_df),
             get_top_flex_area(flexural_df),
             get_bot_flex_area(flexural_df),
-            get_flex_torsion_area(shear_df),
+            get_flex_torsion_area(shear_df, program_df),
             get_shear_force(shear_df),
-            get_shear_combo(shear_df),
+            get_shear_overstressed_condition(shear_df),
             get_shear_area(shear_df),
             get_torsion_area(shear_df),
         ]

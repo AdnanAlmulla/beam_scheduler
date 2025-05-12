@@ -66,7 +66,8 @@ def start_popup() -> None:
                 convention such as ''B400X600-C45/55'', where 400 is width and 
                 600 is depth."""
             )
-            ui.label("4. This script adheres to ACI 318-19 for beam design.")
+            ui.label("""4. This script adheres to ACI 318-19 or Eurocode 2 
+                    for beam design.""")
             ui.label(
                 """5. Do not filter or alter the exported design results from 
                 ETABS. Leave it as it was obtained, as filtering or 
@@ -74,7 +75,7 @@ def start_popup() -> None:
             )
         ui.button("Understood", on_click=dialog.close).classes(
             "self-center text-lg mt-4"
-        )
+        ).props("icon-right=check")
 
 
 async def question_popup() -> None:
@@ -105,7 +106,8 @@ async def question_popup() -> None:
                 convention such as ''B400X600-C45/55'', where 400 is width and 
                 600 is depth."""
             )
-            ui.label("6. This script adheres to ACI 318-19 for beam design.")
+            ui.label("""4. This script adheres to ACI 318-19 or Eurocode 2 
+                    for beam design.""")
             ui.label(
                 """7. Do not filter or alter the exported design results from 
                 ETABS. Leave it as it was obtained, as filtering or shifting 
@@ -113,7 +115,7 @@ async def question_popup() -> None:
             )
         ui.button("Understood", on_click=dialog.close).classes(
             "self-center text-lg mt-4"
-        )
+        ).props("icon-right=check")
     await dialog
 
 
@@ -138,7 +140,7 @@ def ui_header() -> None:
             new_tab=True,
         ).classes("self-end justify-self-end"):
             ui.element("i").classes("eva eva-github").classes("text-7xl")
-            ui.tooltip("Github").classes("text-lg rounded-full w-16 h-16 ml-4")
+            ui.tooltip("Github").classes("text-lg rounded-full")
 
 
 def main_row(upload_handler: Callable) -> None:

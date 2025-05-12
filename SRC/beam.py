@@ -15,15 +15,6 @@ Functions:
     get_comp_conc_grade: Extracts the concrete compressive strength from an
     ETABs section descriptor.
     provided_reinforcement: Calculates the area of a circular reinforcing bar.
-
-Typical usage example:
-    section = "B600X750C40/50"
-    width = get_width(section)
-    depth = get_depth(section)
-    fc_prime = get_comp_conc_grade(section)
-
-    beam = Beam(width=width, depth=depth, comp_conc_grade=fc_prime)
-    rebar_area = provided_reinforcement(20)  # Area of 20mm diameter bar
 """
 
 from dataclasses import dataclass, field
@@ -43,6 +34,7 @@ class Beam:
     Attributes:
         storey (str): The storey level of the beam.
         etabs_id (str): The unique identifier for the beam in ETABS.
+        design_code (str): The design code which the beam will be designed to.
         width (int): The width of the beam in mm.
         depth (int): The overall depth of the beam in mm.
         span (int): The span of the beam in mm.
@@ -64,28 +56,27 @@ class Beam:
 
     storey: str = "No storey provided."
     etabs_id: str = "No ETABS ID."
+    design_code: str = "ACI 318-19"  # assumes ACI by default
     width: int = 0  # in mm
     depth: int = 0  # in mm
     span: int = 0  # in mm
     comp_conc_grade: int = 0  # in MPa (n/mm^2)
-    # * Index 0 of this list is positive flexure, index 1 is negative flexure.
-    flex_overstressed: list[bool] = field(
-        default_factory=lambda: [False, False]
-    )
+    flex_overstressed: bool = False  # assumes not overstressed by default
     req_top_flex_reinf: list[int] = field(
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
     req_bot_flex_reinf: list[int] = field(
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
-    req_torsion_flex_reinf: list[int] = field(
+    req_torsion_flex_reinf: list[int] | list[list[int]] = field(
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
+    #! Created for EC2 edgecases
+    req_top_torsion_flex_reinf: list[int] = field(init=False)  # in mm^2
+    #! Created for EC2 edgecases
+    req_bot_torsion_flex_reinf: list[int] = field(init=False)  # in mm^2
     shear_force: list[int] = field(default_factory=lambda: [0, 0, 0])  # in kN
-    # * Index 0 of this list is shear, index 1 is torsion.
-    shear_overstressed: list[bool] = field(
-        default_factory=lambda: [False, False]
-    )
+    shear_overstressed: bool = False  # assumes not overstressed by default
     req_shear_reinf: list[int] = field(
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
@@ -93,10 +84,25 @@ class Beam:
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
     eff_depth: float = field(init=False)  # in mm
+    overstressed: bool = field(init=False)  # overall status of beam condition
 
     def __post_init__(self) -> None:
-        """Initialises effective depth once the depth attribute is provided."""
-        self.eff_depth = 0.8 * self.depth
+        """Initialises the following after input:
+
+        1) Effective depth.
+        2) flexural torsion requirement for EC2.
+        3) Overall condition of beam (if overstressed in flexure, shear, etc).
+        """  # noqa: D415
+        self.eff_depth = int(0.8 * self.depth)
+        if isinstance(self.req_torsion_flex_reinf[0], list) and isinstance(
+            self.req_torsion_flex_reinf[1], list
+        ):
+            self.req_top_torsion_flex_reinf = self.req_torsion_flex_reinf[0]
+            self.req_bot_torsion_flex_reinf = self.req_torsion_flex_reinf[1]
+        if self.flex_overstressed is True or self.shear_overstressed is True:
+            self.overstressed = True
+        else:
+            self.overstressed = False
 
 
 def get_width(section: str) -> int:
