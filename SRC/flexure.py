@@ -14,6 +14,7 @@ Classes:
 """
 
 import itertools
+import math
 
 import beam
 
@@ -161,23 +162,50 @@ Residual flexural rebar: {self.residual_rebar}"""
                     ]
                 self.beam.req_torsion_flex_reinf = [0, 0, 0]
             case "Eurocode 2-2004":
+                self.get_flex_torsion_area()
                 if meets_criteria:
                     self.beam.req_top_flex_reinf = [
-                        flex_tor_area + top_flex_area
-                        for flex_tor_area, top_flex_area in zip(
+                        flex_tor_area + top_flex_area + top_flex_shear_area
+                        for flex_tor_area, top_flex_area, top_flex_shear_area in zip(  # noqa: E501
                             self.beam.req_top_torsion_flex_reinf,
                             self.beam.req_top_flex_reinf,
+                            self.beam.req_top_shear_flex_reinf,
                         )
                     ]
                     self.beam.req_bot_flex_reinf = [
-                        flex_tor_area + bot_flex_area
-                        for flex_tor_area, bot_flex_area in zip(
+                        flex_tor_area + bot_flex_area + bot_flex_shear_area
+                        for flex_tor_area, bot_flex_area, bot_flex_shear_area in zip(  # noqa: E501
                             self.beam.req_bot_torsion_flex_reinf,
                             self.beam.req_bot_flex_reinf,
+                            self.beam.req_bot_shear_flex_reinf,
                         )
                     ]
                     self.beam.req_top_torsion_flex_reinf = [0, 0, 0]
                     self.beam.req_bot_torsion_flex_reinf = [0, 0, 0]
+                    self.beam.req_top_shear_flex_reinf = [0, 0, 0]
+                    self.beam.req_bot_shear_flex_reinf = [0, 0, 0]
+
+                elif (
+                    not meets_criteria
+                    and not self.beam.overstressed
+                    and self.beam.depth >= 1000
+                ):
+                    self.beam.req_top_flex_reinf = [
+                        top_flex_area + top_flex_shear_area
+                        for top_flex_area, top_flex_shear_area in zip(  # noqa: E501
+                            self.beam.req_top_flex_reinf,
+                            self.beam.req_top_shear_flex_reinf,
+                        )
+                    ]
+                    self.beam.req_bot_flex_reinf = [
+                        bot_flex_area + bot_flex_shear_area
+                        for bot_flex_area, bot_flex_shear_area in zip(  # noqa: E501
+                            self.beam.req_bot_flex_reinf,
+                            self.beam.req_bot_shear_flex_reinf,
+                        )
+                    ]
+                    self.beam.req_top_shear_flex_reinf = [0, 0, 0]
+                    self.beam.req_bot_shear_flex_reinf = [0, 0, 0]
 
     def get_flex_rebar(self) -> None:
         """Solve for the flexural rebar.
@@ -417,3 +445,27 @@ Residual flexural rebar: {self.residual_rebar}"""
                     else 0
                 )
                 self.residual_rebar[location] = top_residual + bot_residual
+
+    def get_flex_torsion_area(self) -> None:
+        """Calculates the torsion reinforcement area for EC2 beams.
+
+        This method calculates the longitudinal torsion reinforcement area as
+        per Chapter 3.5.3 of ETABS Concrete Design manual. This is done because
+        ETABS does not provide this value directly for Eurocode 2 beams.
+        """
+        cover: int = 40
+        fyd: int = int(500 / 1.15)  # assuming B500B steel grade
+        tef = max((self.beam.area / self.beam.perimeter), 2 * cover)
+        Ak: int = int((self.beam.width - tef) * (self.beam.depth - tef))
+        uk: int = int(2 * (self.beam.width - tef) + 2 * (self.beam.depth - tef))
+        cot_angle_theta: float = 1 / math.tan(math.radians(21.8))  # radians
+
+        for index in range(3):
+            torsion_force = (
+                self.beam.torsion_long_force[index] * 1000000
+            )  # kN-m to N-mm
+            Asl = int(
+                ((torsion_force / (2 * Ak)) * cot_angle_theta * (uk / fyd)) / 2
+            )
+            self.beam.req_top_torsion_flex_reinf[index] = Asl
+            self.beam.req_bot_torsion_flex_reinf[index] = Asl

@@ -185,7 +185,7 @@ Shear links: {self.shear_links}"""
 
         This method follows Clause 18.4.2.4 of ACI 318-19 by ensuring that the
         longitudinal spacing does not exceed its codal maximum for the
-        left/right and middle shear links. For EC2 edge causes, clause 9.2.2 (6)
+        left/right and middle shear links. For EC2 edge cases, clause 9.2.2 (6)
         is followed for all beam locations.
         """
         if not self.beam.overstressed:

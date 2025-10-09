@@ -57,8 +57,8 @@ class Sideface:
         self.beam = beam
         self.flexure = flexure
         self.shear = shear
-        self.sideface_dia: list[int] = [16, 20, 25]
-        self.sideface_spacing: list[int] = [250, 200, 150]
+        self.sideface_dia: list[int] = [12, 16, 20, 25]
+        self.sideface_spacing: list[int] = [300, 250, 200, 150]
         self.sideface_clearspace: int = 0
         self.required_torsion_reinforcement: dict = {
             "left": 0,

@@ -17,6 +17,7 @@ Functions:
     provided_reinforcement: Calculates the area of a circular reinforcing bar.
 """
 
+from copy import deepcopy
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -48,6 +49,9 @@ class Beam:
         req_shear_reinf (List[int]): Req shear reinf [L, M, R] in mm².
         req_torsion_reinf (List[int]): Req torsional reinf [L, M, R] in mm².
         eff_depth (int): Effective depth of the beam in mm (calculated).
+        overstressed (bool): Overall status if beam is O/S (calculated).
+        area (int): Cross-sectional area of the beam in mm² (calculated).
+        perimeter (int): Cross-sectional perimeter of beam in mm (calculated).
 
     Note:
         The effective depth is automatically calculated as 80% of the overall
@@ -72,10 +76,21 @@ class Beam:
         default_factory=lambda: [0, 0, 0]
     )  # in mm^2
     #! Created for EC2 edgecases
+    req_shear_flex_reinf: list[int] | list[list[int]] = field(
+        init=False
+    )  # in mm^2
+    #! Created for EC2 edgecases
     req_top_torsion_flex_reinf: list[int] = field(init=False)  # in mm^2
     #! Created for EC2 edgecases
     req_bot_torsion_flex_reinf: list[int] = field(init=False)  # in mm^2
+    #! Created for EC2 edgecases
+    req_top_shear_flex_reinf: list[int] = field(init=False)  # in mm^2
+    #! Created for EC2 edgecases
+    req_bot_shear_flex_reinf: list[int] = field(init=False)  # in mm^2
     shear_force: list[int] = field(default_factory=lambda: [0, 0, 0])  # in kN
+    torsion_long_force: list[int] = field(
+        default_factory=lambda: [0, 0, 0]
+    )  # in kN-m
     shear_overstressed: bool = False  # assumes not overstressed by default
     req_shear_reinf: list[int] = field(
         default_factory=lambda: [0, 0, 0]
@@ -85,6 +100,8 @@ class Beam:
     )  # in mm^2
     eff_depth: float = field(init=False)  # in mm
     overstressed: bool = field(init=False)  # overall status of beam condition
+    area: int = field(init=False)  # cross-sectional area in mm^2
+    perimeter: int = field(init=False)  # cross-sectional perimeter in mm
 
     def __post_init__(self) -> None:
         """Initialises the following after input:
@@ -97,12 +114,18 @@ class Beam:
         if isinstance(self.req_torsion_flex_reinf[0], list) and isinstance(
             self.req_torsion_flex_reinf[1], list
         ):
-            self.req_top_torsion_flex_reinf = self.req_torsion_flex_reinf[0]
-            self.req_bot_torsion_flex_reinf = self.req_torsion_flex_reinf[1]
+            self.req_top_shear_flex_reinf = self.req_torsion_flex_reinf[0]
+            self.req_bot_shear_flex_reinf = self.req_torsion_flex_reinf[1]
         if self.flex_overstressed is True or self.shear_overstressed is True:
             self.overstressed = True
         else:
             self.overstressed = False
+        if self.design_code == "Eurocode 2-2004":
+            self.req_shear_flex_reinf = deepcopy(self.req_torsion_flex_reinf)
+            self.req_top_torsion_flex_reinf = [0, 0, 0]
+            self.req_bot_torsion_flex_reinf = [0, 0, 0]
+        self.area = self.width * self.depth  # in mm^2
+        self.perimeter = 2 * (self.width + self.depth)  # in mm
 
 
 def get_width(section: str) -> int:

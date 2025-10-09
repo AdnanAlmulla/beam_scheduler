@@ -237,25 +237,28 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
                 flex_torsion_reinf_needed[i : i + 3]
                 for i in range(0, len(flex_torsion_reinf_needed), 3)
             ]
+        # In Eurocode 2, Asl top and Asl bottom are not actually torsion top and
+        # bottom, but they are rather flexural shear reinforcement. This is an
+        # error to be resolved by ETABS in future releases.
         else:
-            flex_torsion_top = dataframe["Asl Top"].tolist()
-            flex_torsion_bot = dataframe["Asl Bottom"].tolist()
-            top_flex_torsion = [
-                flex_torsion_top[i : i + 3]
-                for i in range(0, len(flex_torsion_top), 3)
+            flex_shear_top = dataframe["Asl Top"].tolist()
+            flex_shear_bot = dataframe["Asl Bottom"].tolist()
+            top_flex_shear = [
+                flex_shear_top[i : i + 3]
+                for i in range(0, len(flex_shear_top), 3)
             ]
-            bot_flex_torsion = [
-                flex_torsion_bot[i : i + 3]
-                for i in range(0, len(flex_torsion_bot), 3)
+            bot_flex_shear = [
+                flex_shear_bot[i : i + 3]
+                for i in range(0, len(flex_shear_bot), 3)
             ]
-            combined_flex_torsion = [
+            combined_flex_shear = [
                 combination
-                for pair in zip(top_flex_torsion, bot_flex_torsion)
+                for pair in zip(top_flex_shear, bot_flex_shear)
                 for combination in pair
             ]
             return [
-                combined_flex_torsion[i : i + 2]
-                for i in range(0, len(combined_flex_torsion), 2)
+                combined_flex_shear[i : i + 2]
+                for i in range(0, len(combined_flex_shear), 2)
             ]
 
     def get_shear_force(dataframe: pd.DataFrame) -> list[list[int]]:
@@ -272,6 +275,22 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
         return [
             shear_force_list[i : i + 3]
             for i in range(0, len(shear_force_list), 3)
+        ]
+
+    def get_torsion_long_force(dataframe: pd.DataFrame) -> list[list[int]]:
+        """Get the torsion longitudinal force of each beam.
+
+        Args:
+            dataframe (pd.DataFrame): Dataframe to get torsion force from.
+
+        Returns:
+            list[list[int]]: Nested list cotaining torsion longitudinal force:
+            [left, middle, right]
+        """
+        torsion_long_force_list = dataframe["Torsion for TLngRebar"].tolist()
+        return [
+            torsion_long_force_list[i : i + 3]
+            for i in range(0, len(torsion_long_force_list), 3)
         ]
 
     def get_shear_overstressed_condition(
@@ -349,6 +368,7 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
             get_bot_flex_area(flexural_df),
             get_flex_torsion_area(shear_df, program_df),
             get_shear_force(shear_df),
+            get_torsion_long_force(shear_df),
             get_shear_overstressed_condition(shear_df),
             get_shear_area(shear_df),
             get_torsion_area(shear_df),
