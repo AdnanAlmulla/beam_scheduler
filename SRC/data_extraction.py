@@ -287,7 +287,7 @@ def extract_data(excel_file: str | BinaryIO) -> list[list[Any]] | None:
             list[list[int]]: Nested list cotaining torsion longitudinal force:
             [left, middle, right]
         """
-        torsion_long_force_list = dataframe["Torsion for TLngRebar"].tolist()
+        torsion_long_force_list = dataframe["Torsion for TTrnRebar"].tolist()
         return [
             torsion_long_force_list[i : i + 3]
             for i in range(0, len(torsion_long_force_list), 3)
